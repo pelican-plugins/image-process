@@ -77,6 +77,5 @@ class ImageDerivativeTest(unittest.TestCase):
 
                 self.assertEqual(ImageChops.difference(transformed, expected).getbbox(), None)
 
-
 if __name__ == '__main__':
     unittest.main()

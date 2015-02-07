@@ -65,7 +65,13 @@ def resize(i, w, h):
     or a percentage.
     """
     _, _, w, h = convert_box(i, '0', '0', w, h)
-    return i.resize((int(w),int(h)), Image.BICUBIC)
+
+    if i.mode == 'P':
+        i = i.convert('RGBA')
+    elif i.mode == '1':
+        i = i.convert('L')
+
+    return i.resize((int(w),int(h)), Image.LANCZOS)
 
 
 def scale(i, w, h, inside):
@@ -101,7 +107,31 @@ def scale(i, w, h, inside):
     else:
         scale = max(w, h)
 
-    return i.resize((int(scale*iw), int(scale*ih)), Image.BICUBIC)
+    if i.mode == 'P':
+        i = i.convert('RGBA')
+    elif i.mode == '1':
+        i = i.convert('L')
+
+    return i.resize((int(scale*iw), int(scale*ih)), Image.LANCZOS)
+
+
+def rotate(i, degrees):
+    if i.mode == 'P':
+        i = i.convert('RGBA')
+    elif i.mode == '1':
+        i = i.convert('L')
+
+    # rotate does not support the LANCZOS filter (Pillow 2.7.0).
+    return i.rotate(int(degrees), Image.BICUBIC, True)
+
+
+def apply_filter(i, f):
+    if i.mode == 'P':
+        i = i.convert('RGBA')
+    elif i.mode == '1':
+        i = i.convert('L')
+
+    return i.filter(f)
 
 
 basic_ops = {
@@ -110,20 +140,20 @@ basic_ops = {
     'flip_vertical': lambda i: i.transpose(Image.FLIP_TOP_BOTTOM),
     'grayscale': lambda i: i.convert('L'),
     'resize': resize,
-    'rotate': lambda i, degrees: i.rotate(int(degrees), Image.BICUBIC, True),
+    'rotate': rotate,
     'scale_in': functools.partial(scale, inside=True),
     'scale_out': functools.partial(scale, inside=False),
 
-    'blur': lambda i: i.filter(ImageFilter.BLUR),
-    'contour': lambda i: i.filter(ImageFilter.CONTOUR),
-    'detail': lambda i: i.filter(ImageFilter.DETAIL),
-    'edge_enhance': lambda i: i.filter(ImageFilter.EDGE_ENHANCE),
-    'edge_enhance_more': lambda i: i.filter(ImageFilter.EDGE_ENHANCE_MORE),
-    'emboss': lambda i: i.filter(ImageFilter.EMBOSS),
-    'find_edges': lambda i: i.filter(ImageFilter.FIND_EDGES),
-    'smooth': lambda i: i.filter(ImageFilter.SMOOTH),
-    'smooth_more': lambda i: i.filter(ImageFilter.SMOOTH_MORE),
-    'sharpen': lambda i: i.filter(ImageFilter.SHARPEN),
+    'blur': functools.partial(apply_filter, f=ImageFilter.BLUR),
+    'contour': functools.partial(apply_filter, f=ImageFilter.CONTOUR),
+    'detail': functools.partial(apply_filter, f=ImageFilter.DETAIL),
+    'edge_enhance': functools.partial(apply_filter, f=ImageFilter.EDGE_ENHANCE),
+    'edge_enhance_more': functools.partial(apply_filter, f=ImageFilter.EDGE_ENHANCE_MORE),
+    'emboss': functools.partial(apply_filter, f=ImageFilter.EMBOSS),
+    'find_edges': functools.partial(apply_filter, f=ImageFilter.FIND_EDGES),
+    'smooth': functools.partial(apply_filter, f=ImageFilter.SMOOTH),
+    'smooth_more': functools.partial(apply_filter, f=ImageFilter.SMOOTH_MORE),
+    'sharpen': functools.partial(apply_filter, f=ImageFilter.SHARPEN),
     }
 
 

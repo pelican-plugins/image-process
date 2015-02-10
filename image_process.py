@@ -73,12 +73,14 @@ def resize(i, w, h):
     return i.resize((int(w),int(h)), Image.LANCZOS)
 
 
-def scale(i, w, h, inside):
+def scale(i, w, h, upscale, inside):
     """Resize the image to the dimension specified, keeping the aspect
     ratio.
 
     w, h (width, height) must be strings specifying either a number
     or a percentage, or "None" to ignore this constraint.
+
+    If upscale is True, upscaling is allowed.
 
     If inside is True, the resulting image will not be larger than the
     dimensions specified, else it will not be smaller.
@@ -105,6 +107,9 @@ def scale(i, w, h, inside):
         scale = min(w, h)
     else:
         scale = max(w, h)
+
+    if upscale in [0, '0', 'False', False]:
+        scale = min(scale, 1.)
 
     if i.mode == 'P':
         i = i.convert('RGBA')

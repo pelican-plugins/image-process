@@ -15,7 +15,6 @@ from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
 
-
 images = []
 
 def convert_box(image, t, l, r, b):
@@ -159,34 +158,50 @@ basic_ops = {
 
 def harvest_images(instance):
     if instance._content is not None:
-        content_modified = False
-        soup = BeautifulSoup(instance._content)
+        instance._content = harvest_images_in_fragment(instance._content, instance.settings)
 
-        if 'IMAGE_PROCESS_DIR' in instance.settings:
-            dest_dir = instance.settings['IMAGE_PROCESS_DIR']
-        else:
-            dest_dir = 'derivatives'
+    for tag in iter(instance.metadata):
+        fragment = getattr(instance, tag)
+        if isinstance(fragment, basestring):
+            fragment = harvest_images_in_fragment(fragment, instance.settings)
+            setattr(instance, tag.lower(), fragment)
+            instance.metadata[tag] = fragment
 
-        for img in soup.find_all('img', class_ = re.compile("image-process-[-a-zA-Z0-9_]+")):
-            for c in img['class']:
-                match = re.search(r"image-process-([-a-zA-Z0-9_]+)", c)
-                if match is not None:
-                    source = os.path.join(instance.settings['OUTPUT_PATH'], img['src'][1:])
-                    derivative = match.group(1)
 
-                    path, name = os.path.split(img['src'])
-                    img['src'] = os.path.join(path, dest_dir, derivative, name)
+def harvest_images_in_fragment(fragment, settings):
+    fragment_changed = False
+    soup = BeautifulSoup(fragment)
 
-                    path, name = os.path.split(source)
-                    destination = os.path.join(path, dest_dir, derivative, name)
+    if 'IMAGE_PROCESS_DIR' in settings:
+        dest_dir = settings['IMAGE_PROCESS_DIR']
+    else:
+        dest_dir = 'derivatives'
 
-                    images.append((source, destination, derivative))
+    for img in soup.find_all('img', class_ = re.compile("image-process-[-a-zA-Z0-9_]+")):
+        for c in img['class']:
+            match = re.search(r"image-process-([-a-zA-Z0-9_]+)", c)
+            if match is not None:
+                source = os.path.join(settings['OUTPUT_PATH'], img['src'][1:])
+                derivative = match.group(1)
 
-                    content_modified = True
-                    break # for c in img['class']
+                path, name = os.path.split(img['src'])
+                img['src'] = os.path.join(path, dest_dir, derivative, name)
 
-        if content_modified:
-            instance._content = soup.decode()
+                path, name = os.path.split(source)
+                destination = os.path.join(path, dest_dir, derivative, name)
+
+                images.append((source, destination, derivative))
+                fragment_changed = True
+                break # for c in img['class']
+
+    if fragment_changed:
+        new_fragment = '';
+        for element in soup.find('body').children:
+            new_fragment += element.decode()
+    else:
+        new_fragment = fragment
+
+    return new_fragment
 
 
 def process_images(p):

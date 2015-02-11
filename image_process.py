@@ -231,6 +231,10 @@ def process_images(p):
 
         i.save(image[1])
 
+    # Clean up images global for the case where Pelican is running in
+    # autoreload mode.
+    del images[:]
+
 
 def register():
     signals.content_object_init.connect(harvest_images)

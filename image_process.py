@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import functools
 import os.path
 import re
+import six
 
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
@@ -167,7 +168,7 @@ def harvest_images(instance):
 
     for tag in iter(instance.metadata):
         fragment = getattr(instance, tag)
-        if isinstance(fragment, basestring):
+        if isinstance(fragment, six.string_types):
             fragment = harvest_images_in_fragment(fragment, instance.settings)
             setattr(instance, tag.lower(), fragment)
             instance.metadata[tag] = fragment
@@ -200,9 +201,16 @@ def harvest_images_in_fragment(fragment, settings):
                 break # for c in img['class']
 
     if fragment_changed:
-        new_fragment = '';
-        for element in soup.find('body').children:
-            new_fragment += element.decode()
+        # In Python 2, BeautifulSoup put our fragment inside html and
+        # body tags, but in Python 3, it does not (maybe because it is
+        # not using the same HTML parser).
+        body = soup.find('body')
+        if body:
+            new_fragment = '';
+            for element in body.children:
+                new_fragment += element.decode()
+        else:
+            new_fragment = soup.decode()
     else:
         new_fragment = fragment
 

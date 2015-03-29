@@ -227,17 +227,24 @@ def process_images(p):
                 # Already exists
                 pass
 
-        i = Image.open(image[0])
+        # If original image is older than existing derivative, skip
+        # processing to save time, unless user explicitely forced
+        # image generation.
+        if ('IMAGE_PROCESS_FORCE' in p.settings and p.settings['IMAGE_PROCESS_FORCE']) or \
+                (not os.path.exists(image[1])) or \
+                (os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
 
-        process = p.settings['IMAGE_PROCESS'][image[2]]
-        for step in process:
-            if hasattr(step, '__call__'):
-                i = step(i)
-            else:
-                elems = step.split(' ')
-                i = basic_ops[elems[0]](i, *elems[1:])
+            i = Image.open(image[0])
 
-        i.save(image[1])
+            process = p.settings['IMAGE_PROCESS'][image[2]]
+            for step in process:
+                if hasattr(step, '__call__'):
+                    i = step(i)
+                else:
+                    elems = step.split(' ')
+                    i = basic_ops[elems[0]](i, *elems[1:])
+
+            i.save(image[1])
 
     # Clean up images global for the case where Pelican is running in
     # autoreload mode.

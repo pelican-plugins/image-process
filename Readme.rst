@@ -172,6 +172,9 @@ In reStructuredText, you can use the ``:class:`` attribute of the
 Additional settings
 -------------------
 
+Destination directory
+~~~~~~~~~~~~~~~~~~~~~
+
 By default, the new images will be stored in a directory named
 ``derivative/<TRANSFORMATION_NAME>`` in the directory of the original
 image. You can replace ``derivative`` by something else using the
@@ -180,6 +183,19 @@ image. You can replace ``derivative`` by something else using the
 .. code-block:: python
 
    IMAGE_PROCESS_DIR = 'derivees'
+
+
+Force image processing
+~~~~~~~~~~~~~~~~~~~~~~
+
+If the transformed image already exists and is newer than the original
+image, the plugin assumes that it should not recompute it again. You
+can force the plugin to recompute all images by setting
+``IMAGE_PROCESS_FORCE`` to True in your Pelican configuration file.
+
+.. code-block:: python
+
+   IMAGE_PROCESS_FORCE = True
 
 
 Credits

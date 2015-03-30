@@ -187,16 +187,37 @@ def harvest_images_in_fragment(fragment, settings):
         for c in img['class']:
             match = re.search(r"image-process-([-a-zA-Z0-9_]+)", c)
             if match is not None:
+                url_path, name = os.path.split(img['src'])
+
                 source = os.path.join(settings['OUTPUT_PATH'], img['src'][1:])
+                output_path, _ = os.path.split(source)
+
                 derivative = match.group(1)
 
-                path, name = os.path.split(img['src'])
-                img['src'] = os.path.join(path, dest_dir, derivative, name)
+                if isinstance(settings['IMAGE_PROCESS'][derivative], list):
+                    # Single source image specification.
+                    img['src'] = os.path.join(url_path, dest_dir, derivative, name)
+                    destination = os.path.join(output_path, dest_dir, derivative, name)
+                    images.append((source, destination, settings['IMAGE_PROCESS'][derivative]))
 
-                path, name = os.path.split(source)
-                destination = os.path.join(path, dest_dir, derivative, name)
+                elif isinstance(settings['IMAGE_PROCESS'][derivative], dict):
+                    # Multiple source image specification.
+                    default_index = settings['IMAGE_PROCESS'][derivative]['default']
+                    default_name = settings['IMAGE_PROCESS'][derivative]['srcset'][default_index][0]
+                    img['src'] = os.path.join(url_path, dest_dir, derivative, default_name, name)
 
-                images.append((source, destination, derivative))
+                    if 'sizes' in settings['IMAGE_PROCESS'][derivative]:
+                        img['sizes'] = settings['IMAGE_PROCESS'][derivative]['sizes']
+
+                    srcset = []
+                    for src in settings['IMAGE_PROCESS'][derivative]['srcset']:
+                        srcset.append("%s %s" % (os.path.join(url_path, dest_dir, derivative, src[0], name), src[0]))
+                        destination = os.path.join(output_path, dest_dir, derivative, src[0], name)
+                        images.append((source, destination, src[1]))
+
+                    if len(srcset) > 0:
+                        img['srcset'] = ', '.join(srcset)
+
                 fragment_changed = True
                 break # for c in img['class']
 
@@ -236,8 +257,7 @@ def process_images(p):
 
             i = Image.open(image[0])
 
-            process = p.settings['IMAGE_PROCESS'][image[2]]
-            for step in process:
+            for step in image[2]:
                 if hasattr(step, '__call__'):
                     i = step(i)
                 else:

@@ -5,9 +5,12 @@
 This plugin let you automate the processing of images based on their
 class attribute. Use this plugin to minimize the overall page weight
 and to save you a trip to Gimp or Photoshop each time you include an
-image in your post.
+image in your post. The plugin supports the ``srcset`` attribute by
+generating multiple images from one source, if requested.
 
 This plugin will not overwrite your original images.
+
+This plugin does not (yet) generate ``<picture>`` tags.
 
 Requirements
 ============
@@ -32,9 +35,11 @@ the JPEG development library:
 Usage
 =====
 
-This plugin works by scanning your content for ``<img>`` tags with special
-classes, computing a new image according to the class name it found
-and replacing the ``src`` attribute with the URL of the new image.
+This plugin works by scanning your content for ``<img>`` tags with
+special classes, computing new images according to the class name it
+found, replacing the ``src`` attribute and adding a ``srcset``
+attribute if necessary.
+
 
 Define transformations
 ----------------------
@@ -47,8 +52,22 @@ list of operations:
 .. code-block:: python
 
   IMAGE_PROCESS = {
-      'thumb': ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"]
-      'article-image': ["scale_in 300 300"]
+      'thumb': ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"],
+      'article-image': ["scale_in 300 300"],
+      'crisp': { 'srcset': [('1x', ["scale_in 800 600 True"]),
+                            ('2x', ["scale_in 1600 1200 True"]),
+                            ('4x', ["scale_in 3200 2400 True"]),
+                           ],
+                 'default': '1x',
+               },
+      'large-photo': { 'sizes': '(min-width: 1200px) 800px, (min-width: 992px) 650px, \
+                                 (min-width: 768px) 718px, 100vw',
+                       'srcset': [('600w', ["scale_in 600 450 True"]),
+                                  ('800w', ["scale_in 800 600 True"]),
+                                  ('1600w', ["scale_in 1600 1200 True"]),
+                                  ],
+                       'default': '800w',
+                     },
       }
 
 .. note::
@@ -56,8 +75,33 @@ list of operations:
    If you are writing content in reStructuredText, do not use
    underscores (``_``) in your transformation names.
 
+The ``thumb`` and the ``article-image`` transformations define simple
+transformations: the original image will be transformed by applying
+the list of operations specified and the ``src`` attribute of the
+``<img>`` will be replaced by the URL of the transformed image.
 
-Available operations are:
+The ``crisp`` and the ``large-photo`` transformations take advantage
+of the ``srcset`` attribute to define responsive images (see `this
+article`_ for a gentle introduction to ``srcset`` and
+``<picture>``). The ``crisp`` transformation is an example of a
+transformation enabling device-pixel-ratio-based selection, while the
+``large-photo`` transformation is an example of viewport-based
+selection. Each of the transformation in the ``srcset`` list will be
+used to generate a new image that will be attached, along with its
+description, to the ``srcset`` attribute of the ``<img>`` element,
+while its ``src`` attribute will be replaced by the ``default`` image
+URL. If present, the ``sizes`` string will become the ``sizes``
+attribute of the ``<img>``.
+
+The ``default`` value can either be:
+
+- a string specifying the name of the transformation in the ``srcset``
+  array to use as default;
+- a list of operation to compute the default image.
+
+.. _this article: http://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
+
+Available operations for transformations are:
 
 crop *top* *left* *right* *bottom*
   Crop the image to the box (*left*, *top*)-(*right*, *bottom*). Values
@@ -155,7 +199,7 @@ write your content in HTML or in Markdown, do something like this:
 
 
 In reStructuredText, you can use the ``:class:`` attribute of the
-``image`` directive:
+``image`` of the ``figure`` directive:
 
 .. code-block:: rst
 

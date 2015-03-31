@@ -202,8 +202,16 @@ def harvest_images_in_fragment(fragment, settings):
 
                 elif isinstance(settings['IMAGE_PROCESS'][derivative], dict):
                     # Multiple source image specification.
-                    default_index = settings['IMAGE_PROCESS'][derivative]['default']
-                    default_name = settings['IMAGE_PROCESS'][derivative]['srcset'][default_index][0]
+
+                    default = settings['IMAGE_PROCESS'][derivative]['default']
+                    if isinstance(default, six.string_types):
+                        default_name = default
+                    elif isinstance(default, list):
+                        default_name = 'default'
+                        destination = os.path.join(output_path, dest_dir, derivative,
+                                                   default_name, name)
+                        images.append((source, destination, default))
+
                     img['src'] = os.path.join(url_path, dest_dir, derivative, default_name, name)
 
                     if 'sizes' in settings['IMAGE_PROCESS'][derivative]:
@@ -211,7 +219,8 @@ def harvest_images_in_fragment(fragment, settings):
 
                     srcset = []
                     for src in settings['IMAGE_PROCESS'][derivative]['srcset']:
-                        srcset.append("%s %s" % (os.path.join(url_path, dest_dir, derivative, src[0], name), src[0]))
+                        srcset.append("%s %s" % (os.path.join(url_path, dest_dir, derivative,
+                                                              src[0], name), src[0]))
                         destination = os.path.join(output_path, dest_dir, derivative, src[0], name)
                         images.append((source, destination, src[1]))
 

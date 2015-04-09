@@ -108,8 +108,7 @@ class HTMLGenerationTest(unittest.TestCase):
                    'default': ["scale_in 400 300 True"],
                    },
         'large-photo': {'type': 'responsive-image',
-                        'sizes': '(min-width: 1200px) 800px, (min-width: 992px) 650px, \
-                                (min-width: 768px) 718px, 100vw',
+                        'sizes': '(min-width: 1200px) 800px, (min-width: 992px) 650px, (min-width: 768px) 718px, 100vw',
                         'srcset': [('600w', ["scale_in 600 450 True"]),
                                    ('800w', ["scale_in 800 600 True"]),
                                    ('1600w', ["scale_in 1600 1200 True"]),
@@ -166,29 +165,26 @@ class HTMLGenerationTest(unittest.TestCase):
         test_data = [
             ('<img class="image-process-thumb" src="/tmp/test.jpg" />',
              '<img class="image-process-thumb" src="/tmp/derivs/thumb/test.jpg"/>',
-             'thumb',
-             ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"]
+             ('tmp/test.jpg', 'thumb/test.jpg', ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"])
              ),
             ('<img class="image-process-article-image" src="/tmp/test.jpg" />',
              '<img class="image-process-article-image" src="/tmp/derivs/article-image/test.jpg"/>',
-             'article-image',
-             ["scale_in 300 300"]
+             ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"])
              )
            ]
 
-        expected_source = os.path.join(settings['PATH'], 'tmp/test.jpg')
-        output_path, _ = os.path.split(expected_source)
-
         for data in test_data:
-            base_path = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'], data[2])
-            expected_destination = os.path.join(base_path, 'test.jpg')
+            expected_source = os.path.join(settings['PATH'], data[2][0])
+            output_path, _ = os.path.split(expected_source)
+            base_path = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'])
+            expected_destination = os.path.join(base_path, data[2][1])
 
             c = Instance(data[0], settings)
 
             del images[:]
             harvest_images(c)
 
-            expected_images = [(expected_source, expected_destination, data[3])]
+            expected_images = [(expected_source, expected_destination, data[2][2])]
 
             self.assertEqual(c._content, data[1])
             self.assertEqual(images, expected_images)
@@ -199,23 +195,26 @@ class HTMLGenerationTest(unittest.TestCase):
         test_data = [
             ('<img class="image-process-crisp" src="/tmp/test.jpg" />',
              '<img class="image-process-crisp" src="/tmp/derivs/crisp/1x/test.jpg" srcset="/tmp/derivs/crisp/1x/test.jpg 1x, /tmp/derivs/crisp/2x/test.jpg 2x, /tmp/derivs/crisp/4x/test.jpg 4x"/>',
-             'crisp',
-             [('1x', ["scale_in 800 600 True"]),
-              ('2x', ["scale_in 1600 1200 True"]),
-              ('4x', ["scale_in 3200 2400 True"]),
+             [('tmp/test.jpg', 'crisp/1x/test.jpg', ["scale_in 800 600 True"]),
+              ('tmp/test.jpg', 'crisp/2x/test.jpg', ["scale_in 1600 1200 True"]),
+              ('tmp/test.jpg', 'crisp/4x/test.jpg', ["scale_in 3200 2400 True"]),
               ]),
+
             ('<img class="image-process-crisp2" src="/tmp/test.jpg" />',
              '<img class="image-process-crisp2" src="/tmp/derivs/crisp2/default/test.jpg" srcset="/tmp/derivs/crisp2/1x/test.jpg 1x, /tmp/derivs/crisp2/2x/test.jpg 2x, /tmp/derivs/crisp2/4x/test.jpg 4x"/>',
-             'crisp2',
-             [('1x', ["scale_in 800 600 True"]),
-              ('2x', ["scale_in 1600 1200 True"]),
-              ('4x', ["scale_in 3200 2400 True"]),
-              ('default', ["scale_in 400 300 True"])
+             [('tmp/test.jpg', 'crisp2/1x/test.jpg', ["scale_in 800 600 True"]),
+              ('tmp/test.jpg', 'crisp2/2x/test.jpg', ["scale_in 1600 1200 True"]),
+              ('tmp/test.jpg', 'crisp2/4x/test.jpg', ["scale_in 3200 2400 True"]),
+              ('tmp/test.jpg', 'crisp2/default/test.jpg', ["scale_in 400 300 True"])
+              ]),
+
+            ('<img class="image-process-large-photo" src="/tmp/test.jpg" />',
+             '<img class="image-process-large-photo" sizes="(min-width: 1200px) 800px, (min-width: 992px) 650px, (min-width: 768px) 718px, 100vw" src="/tmp/derivs/large-photo/800w/test.jpg" srcset="/tmp/derivs/large-photo/600w/test.jpg 600w, /tmp/derivs/large-photo/800w/test.jpg 800w, /tmp/derivs/large-photo/1600w/test.jpg 1600w"/>',
+             [('tmp/test.jpg', 'large-photo/600w/test.jpg', ["scale_in 600 450 True"]),
+              ('tmp/test.jpg', 'large-photo/800w/test.jpg', ["scale_in 800 600 True"]),
+              ('tmp/test.jpg', 'large-photo/1600w/test.jpg', ["scale_in 1600 1200 True"]),
               ]),
            ]
-
-        expected_source = os.path.join(settings['PATH'], 'tmp/test.jpg')
-        output_path, _ = os.path.split(expected_source)
 
         for data in test_data:
             c = Instance(data[0], settings)
@@ -224,11 +223,59 @@ class HTMLGenerationTest(unittest.TestCase):
             harvest_images(c)
 
             expected_images = list()
-            for t in data[3]:
-                base_path = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'], data[2])
-                expected_destination = os.path.join(base_path, t[0], 'test.jpg')
-                expected_images.append((expected_source, expected_destination, t[1]))
+            for t in data[2]:
+                expected_source = os.path.join(settings['PATH'], t[0])
+                output_path, _ = os.path.split(expected_source)
+                base_path = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'])
+                expected_destination = os.path.join(base_path, t[1])
+                expected_images.append((expected_source, expected_destination, t[2]))
 
+            self.maxDiff = None
+            self.assertEqual(c._content, data[1])
+            for i in images:
+                self.assertIn(i, expected_images)
+            for i in expected_images:
+                self.assertIn(i, images)
+
+
+    def test_picture_generation(self):
+        settings = get_settings(IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR='derivs')
+        test_data = [
+            ('<picture><source class="source-1" src="/images/pelican-closeup.jpg"></source><img class="image-process-pict" src="/images/pelican.jpg"/></picture>',
+             '<picture><source media="(min-width: 640px)" sizes="100vw" srcset="/images/derivs/pict/default/640w/pelican.jpg 640w, /images/derivs/pict/default/1024w/pelican.jpg 1024w, /images/derivs/pict/default/1600w/pelican.jpg 1600w"></source><source srcset="/images/derivs/pict/source-1/1x/pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/pelican-closeup.jpg 2x"></source><img class="image-process-pict" src="/images/derivs/pict/default/640w/pelican.jpg"/></picture>',
+             [('images/pelican.jpg', 'pict/default/640w/pelican.jpg', ["scale_in 640 480 True"]),
+              ('images/pelican.jpg', 'pict/default/1024w/pelican.jpg', ["scale_in 1024 683 True"]),
+              ('images/pelican.jpg', 'pict/default/1600w/pelican.jpg', ["scale_in 1600 1200 True"]),
+              ('images/pelican-closeup.jpg', 'pict/source-1/1x/pelican-closeup.jpg', ["crop 100 100 200 200"]),
+              ('images/pelican-closeup.jpg', 'pict/source-1/2x/pelican-closeup.jpg', ["crop 100 100 300 300"])
+              ]),
+
+            ('<div class="figure"><img alt="Pelican" class="image-process-pict2" src="/images/pelican.jpg" /> <p class="caption">A nice pelican</p> <div class="legend"> <img alt="Other view of pelican" class="image-process source-2" src="/images/pelican-closeup.jpg" /> </div> </div>',
+             '<div class="figure"><picture><source media="(min-width: 640px)" sizes="100vw" srcset="/images/derivs/pict2/default/640w/pelican.jpg 640w, /images/derivs/pict2/default/1024w/pelican.jpg 1024w, /images/derivs/pict2/default/1600w/pelican.jpg 1600w"></source><source srcset="/images/derivs/pict2/source-2/1x/pelican-closeup.jpg 1x, /images/derivs/pict2/source-2/2x/pelican-closeup.jpg 2x"></source><img alt="Pelican" class="image-process-pict2" src="/images/derivs/pict2/source-2/default/pelican-closeup.jpg"/></picture> <p class="caption">A nice pelican</p> <div class="legend">  </div> </div>',
+             [('images/pelican.jpg', 'pict2/default/640w/pelican.jpg', ["scale_in 640 480 True"]),
+              ('images/pelican.jpg', 'pict2/default/1024w/pelican.jpg', ["scale_in 1024 683 True"]),
+              ('images/pelican.jpg', 'pict2/default/1600w/pelican.jpg', ["scale_in 1600 1200 True"]),
+              ('images/pelican-closeup.jpg', 'pict2/source-2/1x/pelican-closeup.jpg', ["crop 100 100 200 200"]),
+              ('images/pelican-closeup.jpg', 'pict2/source-2/2x/pelican-closeup.jpg', ["crop 100 100 300 300"]),
+              ('images/pelican-closeup.jpg', 'pict2/source-2/default/pelican-closeup.jpg', ["scale_in 800 600 True"])
+              ]),
+           ]
+
+        for data in test_data:
+            c = Instance(data[0], settings)
+
+            del images[:]
+            harvest_images(c)
+
+            expected_images = list()
+            for t in data[2]:
+                expected_source = os.path.join(settings['PATH'], t[0])
+                output_path, _ = os.path.split(expected_source)
+                base_path = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'])
+                expected_destination = os.path.join(base_path, t[1])
+                expected_images.append((expected_source, expected_destination, t[2]))
+
+            self.maxDiff = None
             self.assertEqual(c._content, data[1])
             for i in images:
                 self.assertIn(i, expected_images)

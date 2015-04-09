@@ -321,7 +321,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
         url_path, s['filename'] = os.path.split(s['url'])
         s['base_url'] = os.path.join(url_path, settings['IMAGE_PROCESS_DIR'], derivative)
 
-        source = os.path.join(settings['OUTPUT_PATH'], s['url'][1:])
+        source = os.path.join(settings['PATH'], s['url'][1:])
         output_path, _ = os.path.split(source)
         s['base_path'] = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'], derivative)
 
@@ -419,7 +419,7 @@ def process_picture(soup, img, group, settings, derivative):
         url_path, s['filename'] = os.path.split(s['url'])
         s['base_url'] = os.path.join(url_path, settings['IMAGE_PROCESS_DIR'], derivative)
 
-        source = os.path.join(settings['OUTPUT_PATH'], s['url'][1:])
+        source = os.path.join(settings['PATH'], s['url'][1:])
         output_path, _ = os.path.split(source)
         s['base_path'] = os.path.join(output_path, settings['IMAGE_PROCESS_DIR'], derivative)
 

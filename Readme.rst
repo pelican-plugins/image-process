@@ -340,17 +340,19 @@ resize *width* *height*
 rotate degree
   Rotate the image.
 
-scale_in *width* *height*
+scale_in *width* *height* *upscale*
   Resize the image. This operation preserves the image aspect ratio
   and the resulting image will be no larger than *width* x
   *height*. Values can be absolute (a number) or relative to the
   size of the image (a number followed by a percent sign ``%``).
+  If *upscale* is False, smaller images will not be enlarged.
 
-scale_out
+scale_out *width* *height* *upscale*
   Resize the image. This operation preserves the image aspect ratio
   and the resulting image will be no smaller than *width* x
   *height*. Values can be absolute (a number) or relative to the
   size of the image (a number followed by a percent sign ``%``).
+  If *upscale* is False, smaller images will not be enlarged.
 
 blur
   Apply the ``pillow.ImageFilter.BLUR`` filter to the image.

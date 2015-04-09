@@ -171,12 +171,13 @@ def harvest_images(instance):
     if instance._content is not None:
         instance._content = harvest_images_in_fragment(instance._content, instance.settings)
 
-    for tag in iter(instance.metadata):
-        fragment = getattr(instance, tag)
-        if isinstance(fragment, six.string_types):
-            fragment = harvest_images_in_fragment(fragment, instance.settings)
-            setattr(instance, tag.lower(), fragment)
-            instance.metadata[tag] = fragment
+    if hasattr(instance, 'metadata'):
+        for tag in iter(instance.metadata):
+            fragment = getattr(instance, tag)
+            if isinstance(fragment, six.string_types):
+                fragment = harvest_images_in_fragment(fragment, instance.settings)
+                setattr(instance, tag.lower(), fragment)
+                instance.metadata[tag] = fragment
 
 
 def harvest_images_in_fragment(fragment, settings):
@@ -501,7 +502,7 @@ def process_images(p):
                     i = step(i)
                 else:
                     elems = step.split(' ')
-                    i = basic_ops[elems[0]](i, *elems[1:])
+                    i = basic_ops[elems[0]](i, *(elems[1:]))
 
             i.save(image[1])
 

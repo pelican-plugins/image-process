@@ -17,7 +17,6 @@ from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
 
-images = []
 
 def convert_box(image, t, l, r, b):
     """Convert box coordinates strings to integer.
@@ -256,7 +255,7 @@ def process_img_tag(img, settings, derivative):
         process = settings['IMAGE_PROCESS'][derivative]
     else:
         process = settings['IMAGE_PROCESS'][derivative]['ops']
-    images.append((source, destination, process))
+    process_image((source, destination, process), settings)
 
 
 def build_srcset(img, settings, derivative):
@@ -273,7 +272,7 @@ def build_srcset(img, settings, derivative):
     elif isinstance(default, list):
         default_name = 'default'
         destination = os.path.join(base_path, default_name, filename)
-        images.append((source, destination, default))
+        process_image((source, destination, default), settings)
 
     img['src'] = os.path.join(base_url, default_name, filename)
 
@@ -285,7 +284,7 @@ def build_srcset(img, settings, derivative):
         srcset.append("%s %s" % (os.path.join(base_url, src[0], filename),
                                  src[0]))
         destination = os.path.join(base_path, src[0], filename)
-        images.append((source, destination, src[1]))
+        process_image((source, destination, src[1]), settings)
 
     if len(srcset) > 0:
         img['srcset'] = ', '.join(srcset)
@@ -350,7 +349,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
             source = os.path.join(settings['PATH'], default_source['url'][1:])
             destination = os.path.join(s['base_path'], default_source_name,
                                        default_item_name, default_source['filename'])
-            images.append((source, destination, default[1]))
+            process_image((source, destination, default[1]), settings)
 
         # Change img src to url of default processed image.
         img['src'] = os.path.join(s['base_url'], default_source_name, default_item_name,
@@ -370,7 +369,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
             source = os.path.join(settings['PATH'], s['url'][1:])
             destination = os.path.join(s['base_path'], s['name'], src[0], s['filename'])
-            images.append((source, destination, src[1]))
+            process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
             source_tag['srcset'] = ', '.join(srcset)
@@ -448,7 +447,7 @@ def process_picture(soup, img, group, settings, derivative):
             source = os.path.join(settings['PATH'], default_source['url'][1:])
             destination = os.path.join(s['base_path'], default_source_name,
                                        default_item_name, default_source['filename'])
-            images.append((source, destination, default[1]))
+            process_image((source, destination, default[1]), settings)
 
 
         # Change img src to url of default processed image.
@@ -464,7 +463,7 @@ def process_picture(soup, img, group, settings, derivative):
 
             source = os.path.join(settings['PATH'], s['url'][1:])
             destination = os.path.join(s['base_path'], s['name'], src[0], s['filename'])
-            images.append((source, destination, src[1]))
+            process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
             # Append source elements to the picture in the same order
@@ -474,43 +473,36 @@ def process_picture(soup, img, group, settings, derivative):
             img.insert_before(s['element'])
 
 
-def process_images(p):
+def process_image(image, settings):
     # Set default value for 'IMAGE_PROCESS_FORCE'.
-    if 'IMAGE_PROCESS_FORCE' not in p.settings:
-        p.settings['IMAGE_PROCESS_FORCE'] = False
+    if 'IMAGE_PROCESS_FORCE' not in settings:
+        settings['IMAGE_PROCESS_FORCE'] = False
 
-    for image in images:
-        path, _ = os.path.split(image[1])
-        try:
-            os.makedirs(path)
-        except OSError as e:
-            if e.errno == 17:
-                # Already exists
-                pass
+    path, _ = os.path.split(image[1])
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == 17:
+            # Already exists
+            pass
 
-        # If original image is older than existing derivative, skip
-        # processing to save time, unless user explicitely forced
-        # image generation.
-        if (p.settings['IMAGE_PROCESS_FORCE']) or \
-                (not os.path.exists(image[1])) or \
-                (os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
+    # If original image is older than existing derivative, skip
+    # processing to save time, unless user explicitely forced
+    # image generation.
+    if (settings['IMAGE_PROCESS_FORCE']) or \
+            (not os.path.exists(image[1])) or \
+            (os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
 
-            i = Image.open(image[0])
+        i = Image.open(image[0])
 
-            for step in image[2]:
-                if hasattr(step, '__call__'):
-                    i = step(i)
-                else:
-                    elems = step.split(' ')
-                    i = basic_ops[elems[0]](i, *(elems[1:]))
+        for step in image[2]:
+            if hasattr(step, '__call__'):
+                i = step(i)
+            else:
+                elems = step.split(' ')
+                i = basic_ops[elems[0]](i, *(elems[1:]))
 
-            i.save(image[1])
-
-    # Clean up images global for the case where Pelican is running in
-    # autoreload mode.
-    del images[:]
-
+        i.save(image[1])
 
 def register():
     signals.content_object_init.connect(harvest_images)
-    signals.finalized.connect(process_images)

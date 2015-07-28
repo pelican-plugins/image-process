@@ -5,5 +5,5 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
-install: "pip install PIL beautifulsoup4 mock"
+install: "pip install pelican pillow beautifulsoup4 mock"
 script: "python test_image_process.py"

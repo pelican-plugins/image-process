@@ -173,12 +173,11 @@ def harvest_images(path, context):
     if 'IMAGE_PROCESS_DIR' not in context:
         context['IMAGE_PROCESS_DIR'] = 'derivatives'
 
-    with open(path, 'r') as f:
+    with open(path, 'r+') as f:
         res = harvest_images_in_fragment(f, context)
-
-    with open(path, 'w') as f:
+        f.seek(0)
+        f.truncate()
         f.write(res)
-
 
 
 def harvest_images_in_fragment(fragment, settings):

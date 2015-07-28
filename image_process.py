@@ -177,7 +177,7 @@ def harvest_images(path, context):
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
         f.truncate()
-        f.write(res)
+        f.write(res.encode('utf8'))
 
 
 def harvest_images_in_fragment(fragment, settings):
@@ -228,7 +228,7 @@ def harvest_images_in_fragment(fragment, settings):
             elif group.name == 'picture':
                 process_picture(soup, img, group, settings, derivative)
 
-    return str(soup)
+    return unicode(soup)
 
 
 def compute_paths(img, settings, derivative):
@@ -265,7 +265,7 @@ def build_srcset(img, settings, derivative):
     elif isinstance(default, list):
         default_name = 'default'
         destination = os.path.join(path.base_path, default_name, path.filename)
-        process_image((path.source, path.destination, default), settings)
+        process_image((path.source, destination, default), settings)
 
     img['src'] = os.path.join(path.base_url, default_name, path.filename)
 
@@ -293,7 +293,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
     # image URL. Other sources use the img with classes
     # [source['name'], 'image-process'].  We also remove the img from
     # the DOM.
-    sources = copy.deepcopy(path.process_dir[derivative]['sources'])
+    sources = copy.deepcopy(settings['IMAGE_PROCESS'][derivative]['sources'])
     for s in sources:
         if s['name'] == 'default':
             s['url'] = img['src']
@@ -479,9 +479,9 @@ def process_image(image, settings):
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitely forced
     # image generation.
-    if (settings['IMAGE_PROCESS_FORCE']) or \
-            (not os.path.exists(image[1])) or \
-            (os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
+    if (settings['IMAGE_PROCESS_FORCE'] or
+        not os.path.exists(image[1]) or
+        os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
 
         i = Image.open(image[0])
 

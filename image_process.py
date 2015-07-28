@@ -233,16 +233,12 @@ def harvest_images_in_fragment(fragment, settings):
 
 
 def compute_paths(img, settings, derivative):
-
     process_dir = settings['IMAGE_PROCESS_DIR']
-
     url_path, filename = os.path.split(img['src'])
-
     base_url = os.path.join(url_path, process_dir, derivative)
 
     source = os.path.join(settings['PATH'], img['src'][1:])
-    output_path, _ = os.path.split(source)
-    base_path = os.path.join(output_path, process_dir, derivative)
+    base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
 
     return Path(base_url, source, base_path, filename, process_dir)
 

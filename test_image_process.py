@@ -337,22 +337,28 @@ class HTMLGenerationTest(unittest.TestCase):
              '</picture> <p class="caption">A nice pelican</p> <div '
              'class="legend">  </div> </div>',
 
-             [('images/pelican.jpg', 'pict2/default/640w/pelican.jpg',
+             [
+                # default call first
+                ('images/pelican-closeup.jpg',
+                 'pict2/source-2/default/pelican-closeup.jpg',
+                 ["scale_in 800 600 True"]),
+
+                ('images/pelican.jpg', 'pict2/default/640w/pelican.jpg',
                  ["scale_in 640 480 True"]),
-              ('images/pelican.jpg', 'pict2/default/1024w/pelican.jpg',
+
+                # then images in order of processing
+                ('images/pelican.jpg', 'pict2/default/1024w/pelican.jpg',
                  ["scale_in 1024 683 True"]),
-              ('images/pelican.jpg', 'pict2/default/1600w/pelican.jpg',
+                ('images/pelican.jpg', 'pict2/default/1600w/pelican.jpg',
                  ["scale_in 1600 1200 True"]),
-              ('images/pelican-closeup.jpg',
+
+                ('images/pelican-closeup.jpg',
                  'pict2/source-2/1x/pelican-closeup.jpg',
                  ["crop 100 100 200 200"]),
-              ('images/pelican-closeup.jpg',
+                ('images/pelican-closeup.jpg',
                  'pict2/source-2/2x/pelican-closeup.jpg',
-                 ["crop 100 100 300 300"]),
-              ('images/pelican-closeup.jpg',
-                 'pict2/source-2/default/pelican-closeup.jpg',
-                 ["scale_in 800 600 True"])
-              ]),
+                 ["crop 100 100 300 300"])
+              ])
            ]
 
         for data in test_data:
@@ -363,7 +369,7 @@ class HTMLGenerationTest(unittest.TestCase):
             for t in data[2]:
                 expected_source = os.path.join(settings['PATH'], t[0])
                 expected_destination = os.path.join(
-                    settings['OUTPUT_PATH'], 'tmp',
+                    settings['OUTPUT_PATH'], 'images',
                     settings['IMAGE_PROCESS_DIR'], t[1]
                 )
 
@@ -373,10 +379,9 @@ class HTMLGenerationTest(unittest.TestCase):
 
             self.maxDiff = None
             self.assertEqual(html, data[1])
-            #for i in images:
-            #    self.assertIn(i, expected_images)
-            #for i in expected_images:
-            #    self.assertIn(i, images)
+            self.assertEqual(process_image.call_args_list, expected_calls)
+
+            process_image.reset_mock()
 
 
 if __name__ == '__main__':

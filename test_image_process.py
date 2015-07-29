@@ -60,7 +60,7 @@ class ImageDerivativeTest(unittest.TestCase):
             settings['OUTPUT_PATH'], 'tmp', settings['IMAGE_PROCESS_DIR'],
             'crop', 'test.jpg'
         )
-        expected_image = (expected_source, expected_destination, [u'crop 10 20 100 200'])
+        expected_image = (expected_source, expected_destination, ['crop 10 20 100 200'])
         expected_calls = [mock.call(expected_image, settings)]
 
         self.assertEqual(html, expected_content)

@@ -228,7 +228,7 @@ def harvest_images_in_fragment(fragment, settings):
             elif group.name == 'picture':
                 process_picture(soup, img, group, settings, derivative)
 
-    return unicode(soup)
+    return str(soup)
 
 
 def compute_paths(img, settings, derivative):

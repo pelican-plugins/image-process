@@ -24,6 +24,7 @@ Path = collections.namedtuple(
     'Path', ['base_url', 'source', 'base_path', 'filename', 'process_dir']
 )
 
+
 def convert_box(image, t, l, r, b):
     """Convert box coordinates strings to integer.
 
@@ -51,7 +52,7 @@ def convert_box(image, t, l, r, b):
     else:
         b = float(b)
 
-    return (t,l,r,b)
+    return (t, l, r, b)
 
 
 def crop(i, t, l, r, b):
@@ -60,8 +61,8 @@ def crop(i, t, l, r, b):
     t, l, r, b (top, left, right, bottom) must be strings specifying
     either a number or a percentage.
     """
-    t,l,r,b = convert_box(i, t, l, r, b)
-    return i.crop((int(t),int(l),int(r),int(b)))
+    t, l, r, b = convert_box(i, t, l, r, b)
+    return i.crop((int(t), int(l), int(r), int(b)))
 
 
 def resize(i, w, h):
@@ -77,7 +78,7 @@ def resize(i, w, h):
     elif i.mode == '1':
         i = i.convert('L')
 
-    return i.resize((int(w),int(h)), Image.LANCZOS)
+    return i.resize((int(w), int(h)), Image.LANCZOS)
 
 
 def scale(i, w, h, upscale, inside):
@@ -158,8 +159,10 @@ basic_ops = {
     'blur': functools.partial(apply_filter, f=ImageFilter.BLUR),
     'contour': functools.partial(apply_filter, f=ImageFilter.CONTOUR),
     'detail': functools.partial(apply_filter, f=ImageFilter.DETAIL),
-    'edge_enhance': functools.partial(apply_filter, f=ImageFilter.EDGE_ENHANCE),
-    'edge_enhance_more': functools.partial(apply_filter, f=ImageFilter.EDGE_ENHANCE_MORE),
+    'edge_enhance': functools.partial(apply_filter,
+                                      f=ImageFilter.EDGE_ENHANCE),
+    'edge_enhance_more': functools.partial(apply_filter,
+                                           f=ImageFilter.EDGE_ENHANCE_MORE),
     'emboss': functools.partial(apply_filter, f=ImageFilter.EMBOSS),
     'find_edges': functools.partial(apply_filter, f=ImageFilter.FIND_EDGES),
     'smooth': functools.partial(apply_filter, f=ImageFilter.SMOOTH),
@@ -201,30 +204,27 @@ def harvest_images_in_fragment(fragment, settings):
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
-
         elif not isinstance(d, dict):
             raise RuntimeError('Derivative %s definition not handled'
-                '(must be list or dict)' % (derivative))
+                               '(must be list or dict)' % (derivative))
 
         elif 'type' not in d:
             raise RuntimeError('"type" is mandatory for %s.' % derivative)
-
 
         elif d['type'] == 'image':
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
-
         elif d['type'] == 'responsive-image':
             # srcset image specification.
             build_srcset(img, settings, derivative)
-
 
         elif d['type'] == 'picture':
             # Multiple source (picture) specification.
             group = img.find_parent()
             if group.name == 'div':
-                convert_div_to_picture_tag(soup, img, group, settings, derivative)
+                convert_div_to_picture_tag(soup, img, group, settings,
+                                           derivative)
             elif group.name == 'picture':
                 process_picture(soup, img, group, settings, derivative)
 
@@ -274,9 +274,8 @@ def build_srcset(img, settings, derivative):
 
     srcset = []
     for src in process['srcset']:
-        srcset.append("%s %s" %
-            (os.path.join(path.base_url, src[0], path.filename), src[0])
-        )
+        file_path = os.path.join(path.base_url, src[0], path.filename)
+        srcset.append("%s %s" % (file_path, src[0]))
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
@@ -307,7 +306,8 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         url_path, s['filename'] = os.path.split(s['url'])
         s['base_url'] = os.path.join(url_path, process_dir, derivative)
-        s['base_path'] = os.path.join(settings['OUTPUT_PATH'], s['base_url'][1:])
+        s['base_path'] = os.path.join(settings['OUTPUT_PATH'],
+                                      s['base_url'][1:])
 
     # If default is not None, change default img source to the image
     # derivative referenced.
@@ -322,8 +322,10 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
                 break
 
         if default_source is None:
-            raise RuntimeError('No source matching "%s", referenced in default setting.',
-                               (default_source_name,))
+            raise RuntimeError(
+                'No source matching "%s", referenced in default setting.',
+                (default_source_name,)
+            )
 
         if isinstance(default[1], six.string_types):
             default_item_name = default[1]
@@ -333,27 +335,30 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
             source = os.path.join(settings['PATH'], default_source['url'][1:])
             destination = os.path.join(s['base_path'], default_source_name,
-                                       default_item_name, default_source['filename'])
+                                       default_item_name,
+                                       default_source['filename'])
             process_image((source, destination, default[1]), settings)
 
         # Change img src to url of default processed image.
-        img['src'] = os.path.join(s['base_url'], default_source_name, default_item_name,
+        img['src'] = os.path.join(s['base_url'], default_source_name,
+                                  default_item_name,
                                   default_source['filename'])
 
     # Create picture tag.
     picture_tag = soup.new_tag('picture')
     for s in sources:
         # Create new <source>
-        source_attrs = {k:s[k] for k in s if k in ['media', 'sizes']}
+        source_attrs = {k: s[k] for k in s if k in ['media', 'sizes']}
         source_tag = soup.new_tag('source', **source_attrs)
 
         srcset = []
         for src in s['srcset']:
-            srcset.append("%s %s" % (os.path.join(s['base_url'], s['name'], src[0], s['filename']),
-                                     src[0]))
+            srcset.append("%s %s" % (os.path.join(s['base_url'], s['name'],
+                                     src[0], s['filename']), src[0]))
 
             source = os.path.join(settings['PATH'], s['url'][1:])
-            destination = os.path.join(s['base_path'], s['name'], src[0], s['filename'])
+            destination = os.path.join(s['base_path'], s['name'], src[0],
+                                       s['filename'])
             process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
@@ -385,6 +390,7 @@ def process_picture(soup, img, group, settings, derivative):
     </picture>
 
     """
+
     process_dir = settings['IMAGE_PROCESS_DIR']
     process = settings['IMAGE_PROCESS'][derivative]
     # Compile sources URL. Special source "default" uses the main
@@ -394,7 +400,7 @@ def process_picture(soup, img, group, settings, derivative):
     for s in sources:
         if s['name'] == 'default':
             s['url'] = img['src']
-            source_attrs = {k:s[k] for k in s if k in ['media', 'sizes']}
+            source_attrs = {k: s[k] for k in s if k in ['media', 'sizes']}
             s['element'] = soup.new_tag('source', **source_attrs)
         else:
             s['element'] = group.find('source', class_=s['name']).extract()
@@ -404,9 +410,8 @@ def process_picture(soup, img, group, settings, derivative):
 
         url_path, s['filename'] = os.path.split(s['url'])
         s['base_url'] = os.path.join(url_path, process_dir, derivative)
-        s['base_path'] = os.path.join(settings['OUTPUT_PATH'], s['base_url'][1:])
-
-
+        s['base_path'] = os.path.join(settings['OUTPUT_PATH'],
+                                      s['base_url'][1:])
 
     # If default is not None, change default img source to the image
     # derivative referenced.
@@ -421,34 +426,38 @@ def process_picture(soup, img, group, settings, derivative):
                 break
 
         if default_source is None:
-            raise RuntimeError('No source matching "%s", referenced in default setting.',
-                               (default_source_name,))
+            raise RuntimeError(
+                'No source matching "%s", referenced in default setting.',
+                (default_source_name,)
+            )
 
         if isinstance(default[1], six.string_types):
             default_item_name = default[1]
 
         elif isinstance(default[1], list):
             default_item_name = 'default'
-
             source = os.path.join(settings['PATH'], default_source['url'][1:])
             destination = os.path.join(s['base_path'], default_source_name,
-                                       default_item_name, default_source['filename'])
+                                       default_item_name,
+                                       default_source['filename'])
+
             process_image((source, destination, default[1]), settings)
 
-
         # Change img src to url of default processed image.
-        img['src'] = os.path.join(s['base_url'], default_source_name, default_item_name,
+        img['src'] = os.path.join(s['base_url'], default_source_name,
+                                  default_item_name,
                                   default_source['filename'])
 
     # Generate srcsets and put back <source>s in <picture>.
     for s in sources:
         srcset = []
         for src in s['srcset']:
-            srcset.append("%s %s" % (os.path.join(s['base_url'], s['name'], src[0], s['filename']),
-                                     src[0]))
+            srcset.append("%s %s" % (os.path.join(s['base_url'], s['name'],
+                                     src[0], s['filename']), src[0]))
 
             source = os.path.join(settings['PATH'], s['url'][1:])
-            destination = os.path.join(s['base_path'], s['name'], src[0], s['filename'])
+            destination = os.path.join(s['base_path'], s['name'], src[0],
+                                       s['filename'])
             process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
@@ -477,7 +486,7 @@ def process_image(image, settings):
     # image generation.
     if (settings['IMAGE_PROCESS_FORCE'] or
         not os.path.exists(image[1]) or
-        os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
+            os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
 
         i = Image.open(image[0])
 
@@ -489,6 +498,7 @@ def process_image(image, settings):
                 i = basic_ops[elems[0]](i, *(elems[1:]))
 
         i.save(image[1])
+
 
 def register():
     signals.content_written.connect(harvest_images)

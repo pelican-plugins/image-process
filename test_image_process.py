@@ -9,7 +9,7 @@ from pelican.tests.support import unittest, get_settings, temporary_folder
 from image_process import harvest_images_in_fragment, process_image
 
 try:
-    import unittest.mock as mock # python < 3.3
+    import unittest.mock as mock  # python < 3.3
 except ImportError:
     import mock
 
@@ -31,7 +31,7 @@ class ImageDerivativeTest(unittest.TestCase):
         'scale_out': ['scale_out 200 250 False'],
         'blur': ['blur'],
         'contour': ['contour'],
-        'detail':['detail'],
+        'detail': ['detail'],
         'edge_enhance': ['edge_enhance'],
         'edge_enhance_more': ['edge_enhance_more'],
         'emboss': ['emboss'],
@@ -52,20 +52,20 @@ class ImageDerivativeTest(unittest.TestCase):
 
         html = harvest_images_in_fragment(html, settings)
 
-        expected_content = ('<img class="test image-process image-process-crop test2"'
-                            ' src="/tmp/derivatives/crop/test.jpg"/>')
+        expected_content = ('<img class="test image-process image-process-crop'
+                            ' test2" src="/tmp/derivatives/crop/test.jpg"/>')
 
         expected_source = os.path.join(settings['PATH'], 'tmp/test.jpg')
         expected_destination = os.path.join(
             settings['OUTPUT_PATH'], 'tmp', settings['IMAGE_PROCESS_DIR'],
             'crop', 'test.jpg'
         )
-        expected_image = (expected_source, expected_destination, ['crop 10 20 100 200'])
+        expected_image = (expected_source, expected_destination,
+                          ['crop 10 20 100 200'])
         expected_calls = [mock.call(expected_image, settings)]
 
         self.assertEqual(html, expected_content)
         self.assertEqual(expected_calls, process_image.call_args_list)
-
 
     def test_transforms(self):
         settings = get_settings(IMAGE_PROCESS=self.transforms)
@@ -87,7 +87,7 @@ class ImageDerivativeTest(unittest.TestCase):
 
         with temporary_folder() as tmpdir:
             [test_transform(d, i, tmpdir)
-                    for d in self.transforms for i in TEST_IMAGES]
+             for d in self.transforms for i in TEST_IMAGES]
 
 
 class HTMLGenerationTest(unittest.TestCase):
@@ -101,10 +101,10 @@ class HTMLGenerationTest(unittest.TestCase):
         },
         'crisp': {
             'type': 'responsive-image',
-             'srcset': [('1x', ["scale_in 800 600 True"]),
-                        ('2x', ["scale_in 1600 1200 True"]),
-                        ('4x', ["scale_in 3200 2400 True"])],
-              'default': '1x',
+            'srcset': [('1x', ["scale_in 800 600 True"]),
+                       ('2x', ["scale_in 1600 1200 True"]),
+                       ('4x', ["scale_in 3200 2400 True"])],
+            'default': '1x',
         },
         'crisp2': {
             'type': 'responsive-image',
@@ -155,8 +155,7 @@ class HTMLGenerationTest(unittest.TestCase):
                 }, {
                     'name': 'source-2',
                     'srcset': [('1x', ["crop 100 100 200 200"]),
-                               ('2x', ["crop 100 100 300 300"]),
-                                          ]
+                               ('2x', ["crop 100 100 300 300"])]
                 }
             ],
             'default': ('source-2', ["scale_in 800 600 True"]),
@@ -168,7 +167,6 @@ class HTMLGenerationTest(unittest.TestCase):
         html = '<img class="image-process-undefined" src="/tmp/test.jpg" />'
         with self.assertRaises(RuntimeError):
             harvest_images_in_fragment(html, settings)
-
 
     @mock.patch('image_process.process_image')
     def test_image_generation(self, process_image):
@@ -182,13 +180,11 @@ class HTMLGenerationTest(unittest.TestCase):
              (
                  'tmp/test.jpg', 'thumb/test.jpg',
                  ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"]
-             )
-            ),
+             )),
             ('<img class="image-process-article-image" src="/tmp/test.jpg" />',
              '<img class="image-process-article-image" '
              'src="/tmp/derivs/article-image/test.jpg"/>',
-             ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"])
-            )
+             ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"]))
         ]
 
         for data in test_data:
@@ -207,7 +203,6 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(expected_calls, process_image.call_args_list)
             process_image.reset_mock()
 
-
     @mock.patch('image_process.process_image')
     def test_responsive_image_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
@@ -221,11 +216,11 @@ class HTMLGenerationTest(unittest.TestCase):
              '/tmp/derivs/crisp/4x/test.jpg 4x"/>',
 
              [('tmp/test.jpg', 'crisp/1x/test.jpg',
-                  ["scale_in 800 600 True"]),
+               ["scale_in 800 600 True"]),
               ('tmp/test.jpg', 'crisp/2x/test.jpg',
-                  ["scale_in 1600 1200 True"]),
+               ["scale_in 1600 1200 True"]),
               ('tmp/test.jpg', 'crisp/4x/test.jpg',
-                  ["scale_in 3200 2400 True"]),
+               ["scale_in 3200 2400 True"]),
               ]),
 
             ('<img class="image-process-crisp2" src="/tmp/test.jpg" />',
@@ -237,28 +232,27 @@ class HTMLGenerationTest(unittest.TestCase):
 
              # default must be first, because the process execute it first
              [('tmp/test.jpg', 'crisp2/default/test.jpg',
-                  ["scale_in 400 300 True"]),
+               ["scale_in 400 300 True"]),
               ('tmp/test.jpg', 'crisp2/1x/test.jpg',
-                  ["scale_in 800 600 True"]),
+               ["scale_in 800 600 True"]),
               ('tmp/test.jpg', 'crisp2/2x/test.jpg',
-                  ["scale_in 1600 1200 True"]),
+               ["scale_in 1600 1200 True"]),
               ('tmp/test.jpg', 'crisp2/4x/test.jpg',
-                  ["scale_in 3200 2400 True"])
-             ]),
+               ["scale_in 3200 2400 True"])]),
 
             ('<img class="image-process-large-photo" src="/tmp/test.jpg" />',
-             '<img class="image-process-large-photo" sizes="(min-width: 1200px) '
-             '800px, (min-width: 992px) 650px, (min-width: 768px) 718px, '
-             '100vw" src="/tmp/derivs/large-photo/800w/test.jpg" '
-             'srcset="/tmp/derivs/large-photo/600w/test.jpg 600w, '
-             '/tmp/derivs/large-photo/800w/test.jpg 800w, '
+             '<img class="image-process-large-photo" '
+             'sizes="(min-width: 1200px) 800px, (min-width: 992px) 650px, '
+             '(min-width: 768px) 718px, 100vw" src="/tmp/derivs/large-photo/'
+             '800w/test.jpg" srcset="/tmp/derivs/large-photo/600w/test.jpg '
+             '600w, /tmp/derivs/large-photo/800w/test.jpg 800w, '
              '/tmp/derivs/large-photo/1600w/test.jpg 1600w"/>',
              [('tmp/test.jpg', 'large-photo/600w/test.jpg',
-                  ["scale_in 600 450 True"]),
+               ["scale_in 600 450 True"]),
               ('tmp/test.jpg', 'large-photo/800w/test.jpg',
-                  ["scale_in 800 600 True"]),
+               ["scale_in 800 600 True"]),
               ('tmp/test.jpg', 'large-photo/1600w/test.jpg',
-                  ["scale_in 1600 1200 True"]),
+               ["scale_in 1600 1200 True"]),
               ]),
         ]
 
@@ -279,13 +273,11 @@ class HTMLGenerationTest(unittest.TestCase):
                 expected_images.append(expected_image)
                 expected_calls.append(mock.call(expected_image, settings))
 
-
             self.maxDiff = None
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
             process_image.reset_mock()
-
 
     @mock.patch('image_process.process_image')
     def test_picture_generation(self, process_image):
@@ -321,21 +313,21 @@ class HTMLGenerationTest(unittest.TestCase):
               ]),
 
             ('<div class="figure"><img alt="Pelican" class="image-process'
-            '-pict2" src="/images/pelican.jpg" /> <p class="caption">'
-            'A nice pelican</p> <div class="legend"> <img alt="Other view of '
-            'pelican" class="image-process source-2" src="/images/'
-            'pelican-closeup.jpg" /> </div> </div>',
+             '-pict2" src="/images/pelican.jpg" /> <p class="caption">'
+             'A nice pelican</p> <div class="legend"> <img alt="Other view of '
+             'pelican" class="image-process source-2" src="/images/'
+             'pelican-closeup.jpg" /></div></div>',
 
              '<div class="figure"><picture><source media="(min-width: 640px)" '
              'sizes="100vw" srcset="/images/derivs/pict2/default/640w/pelican'
-             '.jpg 640w, /images/derivs/pict2/default/1024w/pelican.jpg 1024w, '
-             '/images/derivs/pict2/default/1600w/pelican.jpg 1600w"></source>'
+             '.jpg 640w, /images/derivs/pict2/default/1024w/pelican.jpg 1024w,'
+             ' /images/derivs/pict2/default/1600w/pelican.jpg 1600w"></source>'
              '<source srcset="/images/derivs/pict2/source-2/1x/pelican-closeup'
              '.jpg 1x, /images/derivs/pict2/source-2/2x/pelican-closeup.jpg '
              '2x"></source><img alt="Pelican" class="image-process-pict2" '
-             'src="/images/derivs/pict2/source-2/default/pelican-closeup.jpg"/>'
-             '</picture> <p class="caption">A nice pelican</p> <div '
-             'class="legend">  </div> </div>',
+             'src="/images/derivs/pict2/source-2/default/pelican-closeup.jpg"'
+             '/></picture> <p class="caption">A nice pelican</p> <div '
+             'class="legend"> </div></div>',
 
              [
                 # default call first

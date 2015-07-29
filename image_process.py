@@ -180,7 +180,7 @@ def harvest_images(path, context):
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
         f.truncate()
-        f.write(res.encode('utf8'))
+        f.write(res)
 
 
 def harvest_images_in_fragment(fragment, settings):

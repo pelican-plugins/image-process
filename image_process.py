@@ -184,7 +184,6 @@ def harvest_images(path, context):
 
 
 def harvest_images_in_fragment(fragment, settings):
-    fragment_changed = False
     soup = BeautifulSoup(fragment, 'html.parser')
 
     for img in soup.find_all('img', class_=IMAGE_PROCESS_REGEX):

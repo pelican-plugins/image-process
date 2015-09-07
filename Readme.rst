@@ -408,8 +408,15 @@ Destination directory
 ~~~~~~~~~~~~~~~~~~~~~
 
 By default, the new images will be stored in a directory named
-``derivative/<TRANSFORMATION_NAME>`` in the directory of the original
-image. You can replace ``derivative`` by something else using the
+``derivative/<TRANSFORMATION_NAME>`` in the output folder at
+the same location as the original image.
+For example if the original image is located in
+the ``content/images`` folder. The computed images will be stored
+in the ``output/images/derivative/<TRANSFORMATION_NAME>``.
+All the transformations are done in the output directory in order
+to avoid confusion with the source files or if we test multiple
+transformations.
+You can replace ``derivative`` by something else using the
 ``IMAGE_PROCESS_DIR`` setting in your Pelican configuration file:
 
 .. code-block:: python

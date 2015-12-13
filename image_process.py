@@ -212,6 +212,7 @@ def harvest_images_in_fragment(fragment, settings):
 
         elif d['type'] == 'image':
             # Single source image specification.
+            import pdb; pdb.set_trace()
             process_img_tag(img, settings, derivative)
 
         elif d['type'] == 'responsive-image':
@@ -235,9 +236,15 @@ def compute_paths(img, settings, derivative):
     url_path, filename = os.path.split(img['src'])
     base_url = os.path.join(url_path, process_dir, derivative)
 
-    source = os.path.join(settings['PATH'], img['src'][1:])
-    base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
-
+    for f in settings['filenames']:
+        if os.path.basename(img['src']) in f:
+            source = settings['filenames'][f].source_path
+            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+            break
+    else:        
+        source = os.path.join(settings['PATH'], img['src'][1:])
+        base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
+        
     return Path(base_url, source, base_path, filename, process_dir)
 
 

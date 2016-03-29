@@ -176,11 +176,11 @@ def harvest_images(path, context):
     if 'IMAGE_PROCESS_DIR' not in context:
         context['IMAGE_PROCESS_DIR'] = 'derivatives'
 
-    with open(path, 'r+') as f:
+    with open(path, 'rb+') as f:
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
         f.truncate()
-        f.write(res)
+        f.write(res.encode('utf-8'))
 
 
 def harvest_images_in_fragment(fragment, settings):
@@ -235,8 +235,14 @@ def compute_paths(img, settings, derivative):
     url_path, filename = os.path.split(img['src'])
     base_url = os.path.join(url_path, process_dir, derivative)
 
-    source = os.path.join(settings['PATH'], img['src'][1:])
-    base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
+    for f in settings['filenames']:
+        if os.path.basename(img['src']) in f:
+            source = settings['filenames'][f].source_path
+            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+            break
+    else:
+        source = os.path.join(settings['PATH'], img['src'][1:])
+        base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
 
     return Path(base_url, source, base_path, filename, process_dir)
 

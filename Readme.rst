@@ -438,6 +438,20 @@ file.
    IMAGE_PROCESS_FORCE = True
 
 
+Selecting a HTML parser
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You may select the HTML parser which is used. The default is the builtin
+``html.parser`` but you may also select ``html5lib`` or ``lxml`` by setting
+``IMAGE_PROCESS_PARSER`` in your pelican configuration file , e.g.:
+
+.. code-block:: python
+
+   IMAGE_PROCESS_PARSER = "html5lib"
+
+For details, refer to the `BeautifulSoup documentation on parsers
+<https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser>`_.
+
 Credits
 -------
 

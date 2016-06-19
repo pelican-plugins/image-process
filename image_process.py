@@ -14,6 +14,8 @@ import os.path
 import re
 import six
 
+from six.moves.urllib_parse import urlparse, urljoin
+from six.moves.urllib_request import url2pathname, pathname2url
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
@@ -233,17 +235,27 @@ def harvest_images_in_fragment(fragment, settings):
 
 def compute_paths(img, settings, derivative):
     process_dir = settings['IMAGE_PROCESS_DIR']
-    url_path, filename = os.path.split(img['src'])
-    base_url = os.path.join(url_path, process_dir, derivative)
+    img_src = urlparse(img['src'])
+    img_src_path = url2pathname(img_src.path[1:])
+    img_src_dirname, filename = os.path.split(img_src_path)
+    derviate_path = os.path.join(process_dir, derivative)
+    base_url = urljoin(img_src.geturl(), pathname2url(derviate_path))
 
-    for f in settings['filenames']:
-        if os.path.basename(img['src']) in f:
-            source = settings['filenames'][f].source_path
-            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+    for f, contobj in settings['filenames'].items():
+        if img_src_path.endswith(contobj.save_as):
+            source = contobj.source_path
+            base_path = os.path.join(settings['OUTPUT_PATH'],
+                                     os.path.dirname(contobj.save_as),
+                                     process_dir, derivative)
             break
     else:
-        source = os.path.join(settings['PATH'], img['src'][1:])
-        base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
+        site_url = urlparse(settings["SITEURL"])
+        site_url_path = url2pathname(site_url.path[1:])
+        src_path = img_src_path.partition(site_url_path)[2].lstrip("/")
+        source = os.path.join(settings['PATH'], src_path)
+        base_path = os.path.join(settings['OUTPUT_PATH'],
+                                 os.path.dirname(src_path),
+                                 derviate_path)
 
     return Path(base_url, source, base_path, filename, process_dir)
 

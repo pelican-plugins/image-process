@@ -244,7 +244,7 @@ def compute_paths(img, settings, derivative):
     for f, contobj in settings['filenames'].items():
         if img_src_path.endswith(contobj.save_as):
             source = contobj.source_path
-            base_path = os.path.join(settings['OUTPUT_PATH'],
+            base_path = os.path.join(contobj.settings['OUTPUT_PATH'],
                                      os.path.dirname(contobj.save_as),
                                      process_dir, derivative)
             break

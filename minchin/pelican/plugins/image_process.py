@@ -5,6 +5,7 @@ Image Process
 
 This plugin process images according to their class attribute.
 """
+
 from __future__ import unicode_literals
 
 import copy
@@ -19,6 +20,8 @@ from six.moves.urllib_request import url2pathname, pathname2url
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
+
+__version__ = '1.0.0'
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 

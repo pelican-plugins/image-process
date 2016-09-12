@@ -15,13 +15,13 @@ import os.path
 import re
 import six
 
-from six.moves.urllib_parse import urlparse, urljoin
+from six.moves.urllib_parse import urlparse, urljoin, unquote
 from six.moves.urllib_request import url2pathname, pathname2url
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
 
-__version__ = '1.0.0'
+__version__ = "1.1.0"
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 
@@ -181,7 +181,11 @@ def harvest_images(path, context):
     if 'IMAGE_PROCESS_DIR' not in context:
         context['IMAGE_PROCESS_DIR'] = 'derivatives'
 
-    with open(path, 'r+') as f:
+    # Set default value for 'IMAGE_PROCESS_ENCODING'
+    if 'IMAGE_PROCESS_ENCODING' not in context:
+        context['IMAGE_PROCESS_ENCODING'] = 'utf-8'
+
+    with open(path, 'r+', encoding=context['IMAGE_PROCESS_ENCODING']) as f:
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
         f.truncate()
@@ -254,7 +258,11 @@ def compute_paths(img, settings, derivative):
     else:
         site_url = urlparse(settings["SITEURL"])
         site_url_path = url2pathname(site_url.path[1:])
-        src_path = img_src_path.partition(site_url_path)[2].lstrip("/")
+        # if SITEURL is undefined, don't break!
+        if site_url_path:
+            src_path = img_src_path.partition(site_url_path)[2].lstrip("/")
+        else:
+            src_path = img_src_path.lstrip("/")
         source = os.path.join(settings['PATH'], src_path)
         base_path = os.path.join(settings['OUTPUT_PATH'],
                                  os.path.dirname(src_path),
@@ -493,6 +501,12 @@ def process_image(image, settings):
     # Set default value for 'IMAGE_PROCESS_FORCE'.
     if 'IMAGE_PROCESS_FORCE' not in settings:
         settings['IMAGE_PROCESS_FORCE'] = False
+
+    # remove URL encoding to get to physical filenames
+    image = list(image)
+    image[0] = unquote(image[0])
+    image[1] = unquote(image[1])
+    # image[2] is the transformation
 
     path, _ = os.path.split(image[1])
     try:

@@ -2,6 +2,9 @@
  Image Process
 ==============
 
+``Image Process`` is a plugin for `Pelican <http://docs.getpelican.com/>`_,
+a static site generator written in Python.
+
 ``Image Process`` let you automate the processing of images based on their
 class attribute. Use this plugin to minimize the overall page weight
 and to save you a trip to Gimp or Photoshop each time you include an
@@ -13,15 +16,41 @@ by generating multiple derivative images from one or more sources.
 
 ``Image Process`` will not overwrite your original images.
 
-Requirements
+
+Installation
 ============
 
-``Image Process`` requires Beautiful Soup and Pillow. Both can be installed
-with pip:
+The easiest way to install ``Image Process`` is through the use of pip. This
+will also install the required dependencies automatically.
 
 .. code-block:: sh
 
-   pip install pillow beautifulsoup4
+  pip install minchin.pelican.plugins.image_process
+
+Then, in your ``pelicanconf.py`` file, add ``Image Process`` to your list of
+plugins:
+
+.. code-block:: python
+
+  PLUGINS = [
+              # ...
+              'minchin.pelican.plugins.image_process',
+              # ...
+            ]
+
+You will also need to configure your desired transformations (see *Usage*
+below) and add the appropirate class to images you want processed.
+
+
+Requirements
+============
+
+``Image Process`` requires Beautiful Soup, Pillow, Six, and Pelican. All
+these can be manually installed with pip:
+
+.. code-block:: sh
+
+   pip install pillow beautifulsoup4 six pelican
 
 If you encounter errors while processing JPEG files, you may need to install
 the JPEG development library:
@@ -142,7 +171,7 @@ introduction to the ``srcset`` and ``<picture>`` syntaxes.
 
 To tell ``Image process`` to generate a responsive image, add a
 ``responsive-image`` transformation to your your ``IMAGE_PROCESS``
-dictionnary, with the following syntax:
+dictionary, with the following syntax:
 
 .. code-block:: python
 
@@ -195,7 +224,7 @@ one of the images in the ``srcset``. However, the ``default`` value
 could also be a list of operations to generate a different derivative
 image.
 
-To make the images in your article responsives, you must add them the
+To make the images in your article responsive, you must add them the
 special class ``image-process-`` followed by the name of the
 transformation you wish to apply, exactly like you would do for the
 image replacement case, described above. So, if you write your content
@@ -452,8 +481,22 @@ You may select the HTML parser which is used. The default is the builtin
 For details, refer to the `BeautifulSoup documentation on parsers
 <https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser>`_.
 
+
+File Encoding
+~~~~~~~~~~~~~
+
+You may select a different file encoding to be used by BeautifulSoup as it
+opens your files. The default is ``uft-8``.
+
+.. code-block:: python
+
+  IMAGE_PROCESS_ENCODING = "uft-8"
+
+
 Credits
 -------
 
 Pelican image in test data by Jon Sullivan. Source:
 http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726
+
+Original Plugin developed by the team at `Whisky Echo Brovo <https://github.com/whiskyechobravo/image_process>`_.

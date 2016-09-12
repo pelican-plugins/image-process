@@ -3,7 +3,8 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5"
 install: "pip install pelican pillow beautifulsoup4 mock pep8"
 script:
   - "pep8 ."
-  - "python test_image_process.py"
+  - "python tests/test_image_process.py"

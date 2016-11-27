@@ -61,8 +61,8 @@ compute a thumbnail from a larger image:
 .. code-block:: python
 
   IMAGE_PROCESS = {
-      'article-image': ["scale_in 300 300"],
-      'thumb': ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"],
+      'article-image': ["scale_in 300 300 True"],
+      'thumb': ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
       }
 
 These transformations tell ``Image process`` to transform the image
@@ -77,10 +77,10 @@ below, there is an alternative syntax for the processing instructions:
 
   IMAGE_PROCESS = {
       'thumb': {'type': 'image',
-                'ops': ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"],
+                'ops': ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
                 }
       'article-image': {'type': 'image',
-                        'ops': ["scale_in 300 300"],
+                        'ops': ["scale_in 300 300 True"],
                         }
       }
 
@@ -397,7 +397,7 @@ its first parameter and it should return the transformed image:
       return image
 
   IMAGE_PROCESS = {
-      'face-thumbnail': [crop_face, "scale_out 150 150"]
+      'face-thumbnail': [crop_face, "scale_out 150 150 True"]
       }
 
 

@@ -45,7 +45,8 @@ class ImageDerivativeTest(unittest.TestCase):
     def test_extraction(self, process_image):
 
         settings = get_settings(
-            IMAGE_PROCESS_DIR='derivatives', IMAGE_PROCESS=self.transforms
+            IMAGE_PROCESS_DIR='derivatives', IMAGE_PROCESS=self.transforms,
+            filenames={}
         )
         html = ('<img class="test image-process image-process-crop test2"'
                 ' src="/tmp/test.jpg" />')
@@ -160,18 +161,39 @@ class HTMLGenerationTest(unittest.TestCase):
             ],
             'default': ('source-2', ["scale_in 800 600 True"]),
         },
+        'page-header': {
+            'type': 'image',
+            'ops': ["scale_in 300 300 False"],
+            'selector': {
+                'name': 'header',
+                'attrs': {
+                    'class': 'post-head'
+                }
+            },
+            'src': {
+                'attribute': 'style',
+                'path-regex': "background-image: url\('(.*)'\);"
+            },
+            'dst': {
+                'attribute': 'style',
+                'format': "background-image: url('{}');"
+            }
+        },
     }
 
     def test_undefined(self):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms)
         html = '<img class="image-process-undefined" src="/tmp/test.jpg" />'
-        with self.assertRaises(RuntimeError):
-            harvest_images_in_fragment(html, settings)
+        out = harvest_images_in_fragment(html, settings)
+        out_expected = ('<img class="image-process-undefined" '
+                        'src="/tmp/test.jpg"/>')
+        self.assertEqual(out, out_expected)
 
     @mock.patch('image_process.process_image')
     def test_image_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
-                                IMAGE_PROCESS_DIR='derivs')
+                                IMAGE_PROCESS_DIR='derivs',
+                                filenames={})
 
         test_data = [
             ('<img class="image-process-thumb" src="/tmp/test.jpg" />',
@@ -184,7 +206,19 @@ class HTMLGenerationTest(unittest.TestCase):
             ('<img class="image-process-article-image" src="/tmp/test.jpg" />',
              '<img class="image-process-article-image" '
              'src="/tmp/derivs/article-image/test.jpg"/>',
-             ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"]))
+             ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"])),
+            ('<header class="main-header post-head"'
+             'style="background-image: url(\'/tmp/test.jpg\');" '
+             'itemscope itemtype="http://schema.org/WPHeader"></header>',
+
+             '<header class="main-header post-head" itemscope="" '
+             'itemtype="http://schema.org/WPHeader" '
+             'style="background-image: url'
+             '(\'/tmp/derivs/page-header/test.jpg\');">'
+             '</header>',
+
+             ('tmp/test.jpg', 'page-header/test.jpg',
+              ["scale_in 300 300 False"]))
         ]
 
         for data in test_data:
@@ -206,7 +240,8 @@ class HTMLGenerationTest(unittest.TestCase):
     @mock.patch('image_process.process_image')
     def test_responsive_image_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
-                                IMAGE_PROCESS_DIR='derivs')
+                                IMAGE_PROCESS_DIR='derivs',
+                                filenames={})
         test_data = [
             ('<img class="image-process-crisp" src="/tmp/test.jpg" />',
              '<img class="image-process-crisp" '

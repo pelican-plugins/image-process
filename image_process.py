@@ -13,10 +13,13 @@ import functools
 import os.path
 import re
 import six
+import logging
 
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
+
+logger = logging.getLogger(__name__)
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 
@@ -183,89 +186,146 @@ def harvest_images(path, context):
         f.write(res)
 
 
+def for_all_nodes(soup, selector, clbk):
+    find_tags = None
+    if isinstance(selector, six.string_types):
+        find_tags = functools.partial(BeautifulSoup.select, soup, selector)
+    elif isinstance(selector, dict):
+        find_tags = functools.partial(BeautifulSoup.find_all, soup, **selector)
+    else:
+        find_tags = functools.partial(BeautifulSoup.find_all, soup, selector)
+
+    for tag in find_tags():
+        clbk(soup, tag)
+
+
+def soup_selector(name, proc_spec=None):
+    proc_spec = proc_spec or {}
+    return proc_spec.get('selector', {
+        'attrs': {
+            'class': 'image-process-{}'.format(name)
+        }
+    })
+
+
 def harvest_images_in_fragment(fragment, settings):
     parser = settings.get("IMAGE_PROCESS_PARSER", "html.parser")
     soup = BeautifulSoup(fragment, parser)
 
-    for img in soup.find_all('img', class_=IMAGE_PROCESS_REGEX):
-        for c in img['class']:
-            if c.startswith('image-process-'):
-                derivative = c[14:]
-                break
-        else:
-            continue
+    for derivative, proc_spec in settings['IMAGE_PROCESS'].iteritems():
+        if isinstance(proc_spec, list):
+            # Single source image specification, simple format
+            proc_spec = {
+                'type': 'image',
+                'ops': proc_spec
+            }
 
-        try:
-            d = settings['IMAGE_PROCESS'][derivative]
-        except KeyError:
-            raise RuntimeError('Derivative %s undefined.' % derivative)
-
-        if isinstance(d, list):
-            # Single source image specification.
-            process_img_tag(img, settings, derivative)
-
-        elif not isinstance(d, dict):
+        if not isinstance(proc_spec, dict):
             raise RuntimeError('Derivative %s definition not handled'
                                '(must be list or dict)' % (derivative))
 
-        elif 'type' not in d:
+        if 'type' not in proc_spec:
             raise RuntimeError('"type" is mandatory for %s.' % derivative)
 
-        elif d['type'] == 'image':
-            # Single source image specification.
-            process_img_tag(img, settings, derivative)
+        d_type = proc_spec['type']
+        if 'image' == d_type:
+            selector = soup_selector(derivative, proc_spec)
+            for_all_nodes(soup, selector,
+                          functools.partial(process_tag_replace,
+                                            settings=settings,
+                                            derivative=derivative,
+                                            proc_spec=proc_spec))
 
-        elif d['type'] == 'responsive-image':
-            # srcset image specification.
-            build_srcset(img, settings, derivative)
+        elif 'responsive-image' == d_type:
+            selector = soup_selector(derivative, proc_spec)
+            for_all_nodes(soup, selector,
+                          functools.partial(build_srcset,
+                                            settings=settings,
+                                            derivative=derivative,
+                                            proc_spec=proc_spec))
 
-        elif d['type'] == 'picture':
-            # Multiple source (picture) specification.
-            group = img.find_parent()
-            if group.name == 'div':
-                convert_div_to_picture_tag(soup, img, group, settings,
-                                           derivative)
-            elif group.name == 'picture':
-                process_picture(soup, img, group, settings, derivative)
+        elif 'picture' == d_type:
+            selector = soup_selector(derivative, proc_spec)
+            for_all_nodes(soup, selector,
+                          functools.partial(process_or_convert_picture,
+                                            settings=settings,
+                                            derivative=derivative,
+                                            proc_spec=proc_spec))
 
     return str(soup)
 
 
-def compute_paths(img, settings, derivative):
+def get_image_path(tag, proc_spec):
+    src_spec = proc_spec.get('src', {})
+
+    attr_name = src_spec.get('attribute', 'src')
+    path = tag[attr_name]
+
+    path_re = src_spec.get('path-regex', None)
+    if path_re:
+        m = re.match(path_re, path)
+        if m and m.lastindex:
+            return m.group(m.lastindex)
+        return
+
+    return path
+
+
+def set_image_path(tag, url, proc_spec):
+    dst_spec = proc_spec.get('dst', {})
+
+    fmt = dst_spec.get('format', '{}')
+    val = fmt.format(url)
+
+    attr_name = dst_spec.get('attribute', 'src')
+    tag[attr_name] = val
+
+
+def compute_paths(tag, settings, derivative, proc_spec):
     process_dir = settings['IMAGE_PROCESS_DIR']
-    url_path, filename = os.path.split(img['src'])
+    img_path = get_image_path(tag, proc_spec)
+    if not img_path:
+        logger.warn('can not find image src path for tag: %s', tag)
+        return
+
+    url_path, filename = os.path.split(img_path)
     base_url = os.path.join(url_path, process_dir, derivative)
 
     for f in settings['filenames']:
-        if os.path.basename(img['src']) in f:
+        if os.path.basename(img_path) in f:
             source = settings['filenames'][f].source_path
-            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+            base_path = os.path.join(
+                settings['OUTPUT_PATH'],
+                os.path.dirname(settings['filenames'][f].save_as),
+                process_dir,
+                derivative)
             break
     else:
-        source = os.path.join(settings['PATH'], img['src'][1:])
+        source = os.path.join(settings['PATH'], img_path[1:])
         base_path = os.path.join(settings['OUTPUT_PATH'], base_url[1:])
 
     return Path(base_url, source, base_path, filename, process_dir)
 
 
-def process_img_tag(img, settings, derivative):
-    path = compute_paths(img, settings, derivative)
-    process = settings['IMAGE_PROCESS'][derivative]
+def process_tag_replace(soup, tag, settings, derivative, proc_spec):
+    path = compute_paths(tag, settings, derivative, proc_spec)
+    if not path:
+        return
 
-    img['src'] = os.path.join(path.base_url, path.filename)
+    image_url = os.path.join(path.base_url, path.filename)
+    set_image_path(tag, image_url, proc_spec)
+
+    process = proc_spec['ops']
     destination = os.path.join(path.base_path, path.filename)
-
-    if not isinstance(process, list):
-        process = process['ops']
-
     process_image((path.source, destination, process), settings)
 
 
-def build_srcset(img, settings, derivative):
-    path = compute_paths(img, settings, derivative)
-    process = settings['IMAGE_PROCESS'][derivative]
+def build_srcset(soup, tag, settings, derivative, proc_spec):
+    path = compute_paths(tag, settings, derivative, proc_spec)
+    if not path:
+        return
 
-    default = process['default']
+    default = proc_spec['default']
     if isinstance(default, six.string_types):
         default_name = default
     elif isinstance(default, list):
@@ -273,20 +333,30 @@ def build_srcset(img, settings, derivative):
         destination = os.path.join(path.base_path, default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
-    img['src'] = os.path.join(path.base_url, default_name, path.filename)
+    image_url = os.path.join(path.base_url, default_name, path.filename)
+    set_image_path(tag, image_url, proc_spec)
 
-    if 'sizes' in process:
-        img['sizes'] = process['sizes']
+    if 'sizes' in proc_spec:
+        tag['sizes'] = proc_spec['sizes']
 
     srcset = []
-    for src in process['srcset']:
+    for src in proc_spec['srcset']:
         file_path = os.path.join(path.base_url, src[0], path.filename)
         srcset.append("%s %s" % (file_path, src[0]))
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
     if len(srcset) > 0:
-        img['srcset'] = ', '.join(srcset)
+        tag['srcset'] = ', '.join(srcset)
+
+
+def process_or_convert_picture(soup, tag, settings, derivative, proc_spec):
+    # Multiple source (picture) specification.
+    group = tag.find_parent()
+    if group.name == 'div':
+        convert_div_to_picture_tag(soup, tag, group, settings, derivative)
+    elif group.name == 'picture':
+        process_picture(soup, tag, group, settings, derivative)
 
 
 def convert_div_to_picture_tag(soup, img, group, settings, derivative):
@@ -490,6 +560,7 @@ def process_image(image, settings):
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitely forced
     # image generation.
+    logger.debug('processing image: %s', image[0])
     if (settings['IMAGE_PROCESS_FORCE'] or
         not os.path.exists(image[1]) or
             os.path.getmtime(image[0]) > os.path.getmtime(image[1])):

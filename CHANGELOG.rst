@@ -3,6 +3,8 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :release:`1.1.1 <2017-03-08>`
+- :bug:`-` provide universal wheels
 - :release:`1.1.0 <2016-09-12>`
 - :support:`-` first release to PyPI
 - :support:`-` add release machinery

@@ -21,7 +21,7 @@ from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 

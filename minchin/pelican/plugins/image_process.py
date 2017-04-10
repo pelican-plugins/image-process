@@ -8,18 +8,19 @@ This plugin process images according to their class attribute.
 
 from __future__ import unicode_literals
 
-import copy
 import collections
+import copy
 import functools
 import os.path
 import re
-import six
 
-from six.moves.urllib_parse import urlparse, urljoin, unquote
-from six.moves.urllib_request import url2pathname, pathname2url
-from PIL import Image, ImageFilter
+import six
 from bs4 import BeautifulSoup
 from pelican import signals
+from PIL import Image, ImageFilter
+
+from six.moves.urllib_parse import unquote, urljoin, urlparse
+from six.moves.urllib_request import pathname2url, url2pathname
 
 __version__ = "1.1.1"
 

@@ -3,6 +3,7 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :bug:`-` upgrade release toolchain
 - :bug:`-` ``Framework :: Pelican :: Plugins`` trove classifier for PyPI now
   available
 - :release:`1.1.1 <2017-03-08>`

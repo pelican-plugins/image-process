@@ -1,0 +1,14 @@
+releaser:
+  module_name: minchin.pelican.plugins.image_process
+  here: .
+  source: minchin
+  test: none
+  docs: none
+  version: minchin/pelican/plugins/image_process.py
+  extra_packages:
+    test:
+      - pillow
+      - pelican
+    pypi:
+      - pillow
+      - python-dateutil

@@ -22,7 +22,7 @@ from PIL import Image, ImageFilter
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 
@@ -533,6 +533,9 @@ def process_image(image, settings):
                 elems = step.split(' ')
                 i = basic_ops[elems[0]](i, *(elems[1:]))
 
+        # `save_all=True`  will allow saving multi-page (aka animated) GIF's
+        # however, turning it on seems to break PNG support, and doesn't seem
+        # to work on GIF's either...
         i.save(image[1])
 
 

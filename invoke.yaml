@@ -12,3 +12,4 @@ releaser:
     pypi:
       - pillow
       - python-dateutil
+      - docutils

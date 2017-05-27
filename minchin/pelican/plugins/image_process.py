@@ -246,8 +246,8 @@ def compute_paths(img, settings, derivative):
     img_src = urlparse(img['src'])
     img_src_path = url2pathname(img_src.path[1:])
     img_src_dirname, filename = os.path.split(img_src_path)
-    derviate_path = os.path.join(process_dir, derivative)
-    base_url = urljoin(img_src.geturl(), pathname2url(derviate_path))
+    derivative_path = os.path.join(process_dir, derivative)
+    base_url = urljoin(img_src.geturl(), pathname2url(derivative_path))
 
     for f, contobj in settings['filenames'].items():
         if img_src_path.endswith(contobj.save_as):
@@ -267,7 +267,7 @@ def compute_paths(img, settings, derivative):
         source = os.path.join(settings['PATH'], src_path)
         base_path = os.path.join(settings['OUTPUT_PATH'],
                                  os.path.dirname(src_path),
-                                 derviate_path)
+                                 derivative_path)
 
     return Path(base_url, source, base_path, filename, process_dir)
 
@@ -405,18 +405,18 @@ def process_picture(soup, img, group, settings, derivative):
     Convert a simplified picture to a full HTML picture:
 
     <picture>
-    <source class="source-1" src="image1.jpg"></source>
-    <source class="source-2" src="image2.jpg"></source>
-    <img class="image-process-picture" src="image3.jpg"></img>
+        <source class="source-1" src="image1.jpg"></source>
+        <source class="source-2" src="image2.jpg"></source>
+        <img class="image-process-picture" src="image3.jpg"></img>
     </picture>
 
     to
 
     <picture>
-    <source srcset="...image1.jpg..." media="..." sizes="..."></source>
-    <source srcset="...image2.jpg..."></source>
-    <source srcset="...image3.jpg..." media="..." sizes="..."></source>
-    <img src=".../image3.jpg"></img>
+        <source srcset="...image1.jpg..." media="..." sizes="..."></source>
+        <source srcset="...image2.jpg..."></source>
+        <source srcset="...image3.jpg..." media="..." sizes="..."></source>
+        <img src=".../image3.jpg"></img>
     </picture>
 
     """
@@ -518,7 +518,7 @@ def process_image(image, settings):
             pass
 
     # If original image is older than existing derivative, skip
-    # processing to save time, unless user explicitely forced
+    # processing to save time, unless user explicitly forced
     # image generation.
     if (settings['IMAGE_PROCESS_FORCE'] or
         not os.path.exists(image[1]) or

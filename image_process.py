@@ -574,7 +574,7 @@ def process_image(image, settings):
                 elems = step.split(' ')
                 i = basic_ops[elems[0]](i, *(elems[1:]))
 
-        i.save(image[1])
+        i.save(image[1], quality=85)
 
 
 def register():

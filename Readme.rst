@@ -260,7 +260,7 @@ article`_ for a gentle introduction to the ``srcset`` and
 .. _this article: http://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
 
 To tell ``Image process`` to generate the images for a ``<picture>``,
-add a ``picture`` entry to your ``IMAGE_PROCESS`` dictionnary with the
+add a ``picture`` entry to your ``IMAGE_PROCESS`` dictionary with the
 following syntax:
 
 .. code-block:: python

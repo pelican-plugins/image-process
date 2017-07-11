@@ -232,14 +232,22 @@ def harvest_images_in_fragment(fragment, settings):
 
 
 def compute_paths(img, settings, derivative):
+    if settings['IMAGE_PROCESS'][derivative].get('create-dir', True):
+        d = derivative
+    else:
+        d = ''
+
     process_dir = settings['IMAGE_PROCESS_DIR']
     url_path, filename = os.path.split(img['src'])
-    base_url = os.path.join(url_path, process_dir, derivative)
+    base_url = os.path.join(url_path, process_dir, d)
 
     for f in settings['filenames']:
         if os.path.basename(img['src']) in f:
             source = settings['filenames'][f].source_path
-            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+            base_path = os.path.join(settings['OUTPUT_PATH'],
+                                     os.path.dirname(settings['filenames'][f].save_as),
+                                     process_dir,
+                                     d)
             break
     else:
         source = os.path.join(settings['PATH'], img['src'][1:])

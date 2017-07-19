@@ -413,6 +413,24 @@ the same location as the original image.
 For example if the original image is located in
 the ``content/images`` folder. The computed images will be stored
 in the ``output/images/derivative/<TRANSFORMATION_NAME>``.
+
+To avoid the creation of these directories ``<TRANSFORMATION_NAME>``
+and consequently the replication of images in the output, we can set
+the ``create-dir`` flag to ``False`` inside each transformation configuration:
+
+.. code-block:: python
+
+  IMAGE_PROCESS = {
+      'large-photo': {
+          'type': '...',
+          'sizes': '...',
+          'srcset': [('...', '...')],
+          'default': '...',
+          'create-dir': False
+       }
+  }
+
+
 All the transformations are done in the output directory in order
 to avoid confusion with the source files or if we test multiple
 transformations.

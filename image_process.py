@@ -13,6 +13,7 @@ import functools
 import os.path
 import re
 import six
+import urllib
 
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
@@ -242,10 +243,11 @@ def compute_paths(img, settings, derivative):
     base_url = os.path.join(url_path, process_dir, d)
 
     for f in settings['filenames']:
-        if os.path.basename(img['src']) in f:
+        if urllib.parse.urlparse(img['src']).path[1:] in settings['filenames'][f].get_url_setting('save_as'):
+
             source = settings['filenames'][f].source_path
             base_path = os.path.join(settings['OUTPUT_PATH'],
-                                     os.path.dirname(settings['filenames'][f].save_as),
+                                     os.path.dirname(settings['filenames'][f].get_url_setting('save_as')),
                                      process_dir,
                                      d)
             break

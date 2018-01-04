@@ -68,7 +68,7 @@ def crop(i, t, l, r, b):
     either a number or a percentage.
     """
     t, l, r, b = convert_box(i, t, l, r, b)
-    return i.crop((int(t), int(l), int(r), int(b)))
+    return i.crop((int(l), int(t), int(r), int(b)))
 
 
 def resize(i, w, h):

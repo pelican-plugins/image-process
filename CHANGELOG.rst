@@ -3,6 +3,7 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :bug:`3` fix order of arguments for crop command
 - :bug:`-` ``pep8`` is now ``pycodestyle``
 - :release:`1.1.3 <2017-05-27>`
 - :bug:`2` make code on PyPI match code on Git

@@ -23,7 +23,7 @@ setup(
     description="Pelican plugin for automating image processing. Written in "
                 "Python.",
     long_description="\n\n".join([open(os.path.join(base_dir,
-                                                    "README.rst")).read()]),
+                                                    "Readme.rst")).read()]),
     author="W. Minchin",
     author_email="w_minchin@hotmail.com",
     url="https://github.com/MinchinWeb/minchin.pelican.plugins.image_process",

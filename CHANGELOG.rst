@@ -3,6 +3,9 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :release:`1.1.4 <2018-01-03>`
+- :bug:`4` Fixing a bug when we use ``{attach}`` on an article (thanks
+  `@cunhaax <https://github.com/cunhaax>`_)
 - :bug:`3` fix order of arguments for crop command
 - :bug:`-` ``pep8`` is now ``pycodestyle``
 - :release:`1.1.3 <2017-05-27>`

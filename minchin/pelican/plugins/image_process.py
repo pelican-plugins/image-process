@@ -14,15 +14,15 @@ import functools
 import os.path
 import re
 
-import six
+from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
 from pelican import signals
-from PIL import Image, ImageFilter
+import six
 
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
-__version__ = "1.1.4-dev"
+__version__ = "1.1.4"
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 

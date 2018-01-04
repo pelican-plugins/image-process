@@ -107,7 +107,7 @@ below, there is an alternative syntax for the processing instructions:
   IMAGE_PROCESS = {
       'thumb': {'type': 'image',
                 'ops': ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
-                }
+                },
       'article-image': {'type': 'image',
                         'ops': ["scale_in 300 300 True"],
                         }
@@ -256,8 +256,6 @@ flexibility in providing a choice of image to the browser. Again, if
 you want to know more about HTML5 responsive images, see `this
 article`_ for a gentle introduction to the ``srcset`` and
 ``<picture>`` syntaxes.
-
-.. _this article: http://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
 
 To tell ``Image process`` to generate the images for a ``<picture>``,
 add a ``picture`` entry to your ``IMAGE_PROCESS`` dictionary with the
@@ -503,7 +501,7 @@ Known Issues
 - test require access to the ``pelican.tests`` module, which isn't included
   in the pelican distribution on PyPI.
 - version 1.1.2, as uploaded to PyPI, is broken; use a different version. (see
-  `issue #2 <(https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/2`_
+  `issue #2 <(https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/2>`_
   for details)
 
 

@@ -250,10 +250,10 @@ def compute_paths(img, settings, derivative):
     base_url = urljoin(img_src.geturl(), pathname2url(derivative_path))
 
     for f, contobj in settings['filenames'].items():
-        if img_src_path.endswith(contobj.save_as):
+        if img_src_path.endswith(contobj.get_url_setting('save_as')):
             source = contobj.source_path
             base_path = os.path.join(contobj.settings['OUTPUT_PATH'],
-                                     os.path.dirname(contobj.save_as),
+                                     os.path.dirname(contobj.get_url_setting('save_as')),
                                      process_dir, derivative)
             break
     else:

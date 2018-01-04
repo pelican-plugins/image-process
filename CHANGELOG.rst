@@ -3,6 +3,7 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :bug:`-` ``pep8`` is now ``pycodestyle``
 - :release:`1.1.3 <2017-05-27>`
 - :bug:`2` make code on PyPI match code on Git
 - :release:`1.1.2 <2017-04-10>`

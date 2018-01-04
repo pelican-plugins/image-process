@@ -5,7 +5,7 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-install: "pip install pelican pillow beautifulsoup4 mock pep8"
+install: "pip install pelican pillow beautifulsoup4 mock pycodestyle"
 script:
-  - "pep8 ."
+  - "pycodestyle ."
   - "python tests/test_image_process.py"

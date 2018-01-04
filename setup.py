@@ -16,11 +16,14 @@ def get_version(filename="minchin/pelican/plugins/image_process.py"):
             if m:
                 return m.group(1)
 
+
 setup(
     name="minchin.pelican.plugins.image_process",
     version=get_version(),
-    description="Pelican plugin for automating image processing. Written in Python.",
-    long_description="\n\n".join([open(os.path.join(base_dir, "README.rst")).read()]),
+    description="Pelican plugin for automating image processing. Written in "
+                "Python.",
+    long_description="\n\n".join([open(os.path.join(base_dir,
+                                                    "README.rst")).read()]),
     author="W. Minchin",
     author_email="w_minchin@hotmail.com",
     url="https://github.com/MinchinWeb/minchin.pelican.plugins.image_process",
@@ -28,7 +31,7 @@ setup(
     namespace_packages=['minchin',
                         'minchin.pelican',
                         'minchin.pelican.plugins',
-                       ],
+                        ],
     include_package_data=True,
     install_requires=[
         'pillow',

@@ -31,34 +31,34 @@ Path = collections.namedtuple(
 )
 
 
-def convert_box(image, t, l, r, b):
+def convert_box(image, top, left, right, bottom):
     """Convert box coordinates strings to integer.
 
     t, l, r, b (top, left, right, bottom) must be strings specifying
     either a number or a percentage.
     """
     bbox = image.getbbox()
-    iw = bbox[2] - bbox[0]
-    ih = bbox[3] - bbox[1]
+    img_width = bbox[2] - bbox[0]
+    img_height = bbox[3] - bbox[1]
 
-    if t[-1] == '%':
-        t = ih * float(t[:-1]) / 100.
+    if top[-1] == '%':
+        top = img_height * float(top[:-1]) / 100.
     else:
-        t = float(t)
-    if l[-1] == '%':
-        l = iw * float(l[:-1]) / 100.
+        top = float(top)
+    if left[-1] == '%':
+        left = img_width * float(left[:-1]) / 100.
     else:
-        l = float(l)
-    if r[-1] == '%':
-        r = iw * float(r[:-1]) / 100.
+        left = float(left)
+    if right[-1] == '%':
+        right = img_width * float(right[:-1]) / 100.
     else:
-        r = float(r)
-    if b[-1] == '%':
-        b = ih * float(b[:-1]) / 100.
+        right = float(right)
+    if bottom[-1] == '%':
+        bottom = img_height * float(bottom[:-1]) / 100.
     else:
-        b = float(b)
+        bottom = float(bottom)
 
-    return (t, l, r, b)
+    return (top, left, right, bottom)
 
 
 def crop(i, t, l, r, b):

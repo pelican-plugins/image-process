@@ -2,9 +2,11 @@
 from __future__ import unicode_literals
 
 import os
-from PIL import Image, ImageChops
-from pelican.tests.support import unittest, get_settings, temporary_folder
+import unittest
+from shutil import rmtree
+from tempfile import mkdtemp
 
+from PIL import Image, ImageChops
 
 from image_process import harvest_images_in_fragment, process_image
 
@@ -17,6 +19,22 @@ except ImportError:
 CUR_DIR = os.path.dirname(__file__)
 TEST_IMAGES = [os.path.join(CUR_DIR, 'test_data/pelican-bird.jpg'),
                os.path.join(CUR_DIR, 'test_data/pelican-bird.png')]
+
+
+def get_settings(**kwargs):
+    """Provide tweaked setting dictionaries for testing
+    Set keyword arguments to override specific settings.
+    """
+    DEFAULT_CONFIG = {
+        'PATH': os.path.join(os.path.dirname(__file__)),
+        'OUTPUT_PATH': 'output',
+        'static_content': {},
+        'filenames': {}
+    }
+    settings = DEFAULT_CONFIG.copy()
+    for key, value in kwargs.items():
+        settings[key] = value
+    return settings
 
 
 class ImageDerivativeTest(unittest.TestCase):
@@ -85,9 +103,10 @@ class ImageDerivativeTest(unittest.TestCase):
             img_diff = ImageChops.difference(transformed, expected).getbbox()
             self.assertEqual(img_diff, None)
 
-        with temporary_folder() as tmpdir:
-            [test_transform(d, i, tmpdir)
-             for d in self.transforms for i in TEST_IMAGES]
+        tmpdir = mkdtemp()
+        [test_transform(d, i, tmpdir)
+         for d in self.transforms for i in TEST_IMAGES]
+        rmtree(tmpdir)
 
 
 class HTMLGenerationTest(unittest.TestCase):
@@ -285,17 +304,17 @@ class HTMLGenerationTest(unittest.TestCase):
                                 IMAGE_PROCESS_DIR='derivs')
         test_data = [
             ('<picture><source class="source-1" '
-             'src="/images/pelican-closeup.jpg"></source><img '
+             'src="/images/pelican-closeup.jpg"><img '
              'class="image-process-pict" src="/images/pelican.jpg"/>'
              '</picture>',
 
              '<picture><source media="(min-width: 640px)" sizes="100vw" '
              'srcset="/images/derivs/pict/default/640w/pelican.jpg 640w, '
              '/images/derivs/pict/default/1024w/pelican.jpg 1024w, '
-             '/images/derivs/pict/default/1600w/pelican.jpg 1600w">'
-             '</source><source srcset="/images/derivs/pict/source-1/1x/'
+             '/images/derivs/pict/default/1600w/pelican.jpg 1600w"/>'
+             '<source srcset="/images/derivs/pict/source-1/1x/'
              'pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/'
-             'pelican-closeup.jpg 2x"></source><img class="image-process-pict"'
+             'pelican-closeup.jpg 2x"/><img class="image-process-pict"'
              ' src="/images/derivs/pict/default/640w/pelican.jpg"/></picture>',
 
              [('images/pelican.jpg', 'pict/default/640w/pelican.jpg',
@@ -321,10 +340,10 @@ class HTMLGenerationTest(unittest.TestCase):
              '<div class="figure"><picture><source media="(min-width: 640px)" '
              'sizes="100vw" srcset="/images/derivs/pict2/default/640w/pelican'
              '.jpg 640w, /images/derivs/pict2/default/1024w/pelican.jpg 1024w,'
-             ' /images/derivs/pict2/default/1600w/pelican.jpg 1600w"></source>'
+             ' /images/derivs/pict2/default/1600w/pelican.jpg 1600w"/>'
              '<source srcset="/images/derivs/pict2/source-2/1x/pelican-closeup'
              '.jpg 1x, /images/derivs/pict2/source-2/2x/pelican-closeup.jpg '
-             '2x"></source><img alt="Pelican" class="image-process-pict2" '
+             '2x"/><img alt="Pelican" class="image-process-pict2" '
              'src="/images/derivs/pict2/source-2/default/pelican-closeup.jpg"'
              '/></picture> <p class="caption">A nice pelican</p> <div '
              'class="legend"> </div></div>',

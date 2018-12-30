@@ -3,7 +3,11 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
-install: "pip install pelican pillow beautifulsoup4 mock pep8"
+  - "3.6"
+install: "pip install -r dev-requirements.txt"
 script:
-  - "pep8 ."
+  - "pycodestyle *.py"
+  - "python test_image_process.py"
+  - "pip uninstall pelican"
+  - "pip install pelican==3.7.1"
   - "python test_image_process.py"

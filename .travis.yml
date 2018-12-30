@@ -8,6 +8,6 @@ install: "pip install -r dev-requirements.txt"
 script:
   - "pycodestyle *.py"
   - "python test_image_process.py"
-  - "pip uninstall pelican"
+  - "pip uninstall -y pelican"
   - "pip install pelican==3.7.1"
   - "python test_image_process.py"

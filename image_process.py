@@ -7,22 +7,24 @@ This plugin process images according to their class attribute.
 """
 from __future__ import unicode_literals
 
-import copy
 import collections
+import copy
 import functools
 import os.path
 import re
-import six
 
+import six
 from PIL import Image, ImageFilter
+
 from bs4 import BeautifulSoup
+from pelican import __version__ as pelican_version
 from pelican import signals
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
-
 Path = collections.namedtuple(
     'Path', ['base_url', 'source', 'base_path', 'filename', 'process_dir']
 )
+PELICAN_MAJOR_VERSION = int(pelican_version.split('.')[0])
 
 
 def convert_box(image, top, left, right, bottom):
@@ -236,10 +238,19 @@ def compute_paths(img, settings, derivative):
     url_path, filename = os.path.split(img['src'])
     base_url = os.path.join(url_path, process_dir, derivative)
 
-    for f in settings['filenames']:
+    if PELICAN_MAJOR_VERSION < 4:
+        file_paths = settings['filenames']
+    else:
+        file_paths = settings['static_content']
+
+    for f in file_paths:
         if os.path.basename(img['src']) in f:
-            source = settings['filenames'][f].source_path
-            base_path = os.path.join(settings['OUTPUT_PATH'], os.path.dirname(settings['filenames'][f].save_as), process_dir, derivative)
+            source = file_paths[f].source_path
+            base_path = os.path.join(
+                settings['OUTPUT_PATH'],
+                os.path.dirname(file_paths[f].save_as),
+                process_dir,
+                derivative)
             break
     else:
         source = os.path.join(settings['PATH'], img['src'][1:])

@@ -304,7 +304,7 @@ class HTMLGenerationTest(unittest.TestCase):
                                 IMAGE_PROCESS_DIR='derivs')
         test_data = [
             ('<picture><source class="source-1" '
-             'src="/images/pelican-closeup.jpg"><img '
+             'src="/images/pelican-closeup.jpg"/><img '
              'class="image-process-pict" src="/images/pelican.jpg"/>'
              '</picture>',
 

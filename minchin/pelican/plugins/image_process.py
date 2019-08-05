@@ -22,7 +22,15 @@ import six
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
+
+__title__ = 'minchin.pelican.plugins.image_process'
+__tagline__ = 'Pelican plugin for automating image processing. Written in Python.'
 __version__ = "1.1.5-dev"
+__author__ = 'William Minchin'
+__email__ = 'w_minchin@hotmail.com'
+__license__ = 'Affero GPL v3'
+__copyright__ = 'Copyright 2015-16 Whisky Echo Bravo, Copyright 2016-19 William Minchin'
+__url__ = 'https://github.com/MinchinWeb/minchin.pelican.plugins.image_process'
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 

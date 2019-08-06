@@ -414,18 +414,18 @@ class HTMLGenerationTest(unittest.TestCase):
         test_data = [
             (
                 '<picture><source class="source-1" '
-                'src="/images/pelican-closeup.jpg"></source><img '
-                'class="image-process-pict" src="/images/pelican.jpg">'
-                '</source></picture>',
+                'src="/images/pelican-closeup.jpg"/><img '
+                'class="image-process-pict" src="/images/pelican.jpg"/>'
+                '</picture>',
                 '<picture><source media="(min-width: 640px)" sizes="100vw" '
                 'srcset="/images/derivs/pict/default/640w/pelican.jpg 640w, '
                 '/images/derivs/pict/default/1024w/pelican.jpg 1024w, '
-                '/images/derivs/pict/default/1600w/pelican.jpg 1600w">'
-                '</source><source srcset="/images/derivs/pict/source-1/1x/'
+                '/images/derivs/pict/default/1600w/pelican.jpg 1600w"/>'
+                '<source srcset="/images/derivs/pict/source-1/1x/'
                 'pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/'
-                'pelican-closeup.jpg 2x"></source><img '
+                'pelican-closeup.jpg 2x"/><img '
                 'class="image-process-pict" '
-                'src="/images/derivs/pict/default/640w/pelican.jpg"></source>'
+                'src="/images/derivs/pict/default/640w/pelican.jpg"/>'
                 '</picture>',
                 [
                     (
@@ -464,10 +464,10 @@ class HTMLGenerationTest(unittest.TestCase):
                 '<div class="figure"><picture><source media="(min-width: 640px)" '
                 'sizes="100vw" srcset="/images/derivs/pict2/default/640w/pelican'
                 ".jpg 640w, /images/derivs/pict2/default/1024w/pelican.jpg 1024w,"
-                ' /images/derivs/pict2/default/1600w/pelican.jpg 1600w"></source>'
+                ' /images/derivs/pict2/default/1600w/pelican.jpg 1600w"/>'
                 '<source srcset="/images/derivs/pict2/source-2/1x/pelican-closeup'
                 ".jpg 1x, /images/derivs/pict2/source-2/2x/pelican-closeup.jpg "
-                '2x"></source><img alt="Pelican" class="image-process-pict2" '
+                '2x"/><img alt="Pelican" class="image-process-pict2" '
                 'src="/images/derivs/pict2/source-2/default/pelican-closeup.jpg"'
                 '/></picture> <p class="caption">A nice pelican</p> <div '
                 'class="legend"> </div></div>',

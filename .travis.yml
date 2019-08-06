@@ -1,4 +1,5 @@
 # see colourettu for example on how to seperate unit tests from style tests
+sudo: false  # run on new infrastructure
 language: python
 python:
   - "2.7"
@@ -9,8 +10,9 @@ python:
   - "nightly"
 matrix:
   allow_failures:
-    - python: 2.7
+    - python: "2.7"
     - python: "nightly"
+cache: pip
 install: "pip install .[all]"
 script:
   - "pycodestyle ."

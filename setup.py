@@ -6,6 +6,7 @@ import setuptools
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+
 def read(*parts):
     # intentionally *not* adding an encoding option to open
     return codecs.open(os.path.join(here, *parts), 'r').read()
@@ -32,18 +33,19 @@ def read_requirements(*parts):
     """
     requirements = []
     for line in read(*parts).splitlines():
-        new_line = re.sub('(\s*)?#.*$',  # the space immediately before the
-                                         # hash mark, the hash mark, and
-                                         # anything that follows it
+        new_line = re.sub(r'(\s*)?#.*$',  # the space immediately before the
+                                          # hash mark, the hash mark, and
+                                          # anything that follows it
                           '',  # replace with a blank string
                           line)
-        new_line = re.sub('(\s*)?-r.*$',  # we also can't reference other
-                                          # requirement files
+        new_line = re.sub(r'(\s*)?-r.*$',  # we also can't reference other
+                                           # requirement files
                           '',  # replace with a blank string
                           line)
         if new_line:  # i.e. we have a non-zero-length string
             requirements.append(new_line)
     return requirements
+
 
 ##############################################################################
 #                          PACKAGE METADATA                                  #
@@ -79,6 +81,9 @@ EXTRA_REQUIRES = {
         'pip-tools',
         'minchin.releaser',
     ],
+    'dev': [
+        'pycodestyle',
+    ]
     # 'docs': [
     #     'sphinx >= 1.4',  # theme requires at least 1.4
     #     'cloud_sptheme >=1.8',

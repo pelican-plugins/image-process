@@ -21,6 +21,7 @@ import six
 
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
+from pelican import __version__ as pelican_version
 
 
 __title__ = 'minchin.pelican.plugins.image_process'
@@ -32,7 +33,9 @@ __license__ = 'Affero GPL v3'
 __copyright__ = 'Copyright 2015-16 Whisky Echo Bravo, Copyright 2016-19 William Minchin'
 __url__ = 'https://github.com/MinchinWeb/minchin.pelican.plugins.image_process'
 
+
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
+PELICAN_MAJOR_VERSION = int(pelican_version.split('.')[0])
 
 Path = collections.namedtuple(
     'Path', ['base_url', 'source', 'base_path', 'filename', 'process_dir']
@@ -257,7 +260,12 @@ def compute_paths(img, settings, derivative):
     derivative_path = os.path.join(process_dir, derivative)
     base_url = urljoin(img_src.geturl(), pathname2url(derivative_path))
 
-    for f, contobj in settings['filenames'].items():
+    if PELICAN_MAJOR_VERSION < 4:
+        file_paths = settings['filenames']
+    else:
+        file_paths = settings['static_content']
+
+    for f, contobj in file_paths.items():
         if img_src_path.endswith(contobj.get_url_setting('save_as')):
             source = contobj.source_path
             base_path = os.path.join(contobj.settings['OUTPUT_PATH'],
@@ -265,9 +273,13 @@ def compute_paths(img, settings, derivative):
                                      process_dir, derivative)
             break
     else:
-        site_url = urlparse(settings["SITEURL"])
-        site_url_path = url2pathname(site_url.path[1:])
-        # if SITEURL is undefined, don't break!
+        if 'SITEURL' in settings:
+            site_url = urlparse(settings["SITEURL"])
+            site_url_path = url2pathname(site_url.path[1:])
+        else:
+            # if SITEURL is undefined, don't break!
+            site_url_path = None
+
         if site_url_path:
             src_path = img_src_path.partition(site_url_path)[2].lstrip("/")
         else:
@@ -284,7 +296,7 @@ def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     process = settings['IMAGE_PROCESS'][derivative]
 
-    img['src'] = os.path.join(path.base_url, path.filename)
+    img['src'] = os.path.join(path.base_url, path.filename).replace("\\","/")
     destination = os.path.join(path.base_path, path.filename)
 
     if not isinstance(process, list):
@@ -305,14 +317,14 @@ def build_srcset(img, settings, derivative):
         destination = os.path.join(path.base_path, default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
-    img['src'] = os.path.join(path.base_url, default_name, path.filename)
+    img['src'] = os.path.join(path.base_url, default_name, path.filename).replace("\\","/")
 
     if 'sizes' in process:
         img['sizes'] = process['sizes']
 
     srcset = []
     for src in process['srcset']:
-        file_path = os.path.join(path.base_url, src[0], path.filename)
+        file_path = os.path.join(path.base_url, src[0], path.filename).replace("\\","/")
         srcset.append("%s %s" % (file_path, src[0]))
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
@@ -447,7 +459,7 @@ def process_picture(soup, img, group, settings, derivative):
             del s['element']['class']
 
         url_path, s['filename'] = os.path.split(s['url'])
-        s['base_url'] = os.path.join(url_path, process_dir, derivative)
+        s['base_url'] = os.path.join(url_path, process_dir, derivative).replace("\\","/")
         s['base_path'] = os.path.join(settings['OUTPUT_PATH'],
                                       s['base_url'][1:])
 
@@ -484,14 +496,15 @@ def process_picture(soup, img, group, settings, derivative):
         # Change img src to url of default processed image.
         img['src'] = os.path.join(s['base_url'], default_source_name,
                                   default_item_name,
-                                  default_source['filename'])
+                                  default_source['filename']).replace("\\","/")
 
     # Generate srcsets and put back <source>s in <picture>.
     for s in sources:
         srcset = []
         for src in s['srcset']:
             srcset.append("%s %s" % (os.path.join(s['base_url'], s['name'],
-                                     src[0], s['filename']), src[0]))
+                                                  src[0], s['filename']).replace("\\","/"),
+                                     src[0]))
 
             source = os.path.join(settings['PATH'], s['url'][1:])
             destination = os.path.join(s['base_path'], s['name'], src[0],

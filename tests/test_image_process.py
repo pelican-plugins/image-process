@@ -2,11 +2,15 @@
 from __future__ import unicode_literals
 
 import os
+import unittest
+from contextlib import contextmanager
+from shutil import rmtree
+from tempfile import mkdtemp
+
+from minchin.pelican.plugins.image_process import (harvest_images_in_fragment,
+                                                   process_image)
+# from pelican.tests.support import get_settings, temporary_folder, unittest
 from PIL import Image, ImageChops
-from pelican.tests.support import unittest, get_settings, temporary_folder
-
-
-from image_process import harvest_images_in_fragment, process_image
 
 try:
     import unittest.mock as mock  # python < 3.3
@@ -17,6 +21,36 @@ except ImportError:
 CUR_DIR = os.path.dirname(__file__)
 TEST_IMAGES = [os.path.join(CUR_DIR, 'test_data/pelican-bird.jpg'),
                os.path.join(CUR_DIR, 'test_data/pelican-bird.png')]
+
+
+def get_settings(**kwargs):
+    """Provide tweaked setting dictionaries for testing
+    Set keyword arguments to override specific settings.
+    """
+    DEFAULT_CONFIG = {
+        'PATH': os.path.join(os.path.dirname(__file__)),
+        'OUTPUT_PATH': 'output',
+        'static_content': {},
+        'filenames': {}
+    }
+    settings = DEFAULT_CONFIG.copy()
+    for key, value in kwargs.items():
+        settings[key] = value
+    return settings
+
+
+@contextmanager
+def temporary_folder():
+    """creates a temporary folder, return it and delete it afterwards.
+    This allows to do something like this in tests:
+        >>> with temporary_folder() as d:
+            # do whatever you want
+    """
+    tempdir = mkdtemp()
+    try:
+        yield tempdir
+    finally:
+        rmtree(tempdir)
 
 
 class ImageDerivativeTest(unittest.TestCase):
@@ -41,7 +75,7 @@ class ImageDerivativeTest(unittest.TestCase):
         'sharpen': ['sharpen'],
         }
 
-    @mock.patch('image_process.process_image')
+    @mock.patch('minchin.pelican.plugins.image_process.process_image')
     def test_extraction(self, process_image):
 
         settings = get_settings(
@@ -168,22 +202,20 @@ class HTMLGenerationTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             harvest_images_in_fragment(html, settings)
 
-    @mock.patch('image_process.process_image')
+    @mock.patch('minchin.pelican.plugins.image_process.process_image')
     def test_image_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
                                 IMAGE_PROCESS_DIR='derivs')
 
         test_data = [
             ('<img class="image-process-thumb" src="/tmp/test.jpg" />',
-             '<img class="image-process-thumb" '
-             'src="/tmp/derivs/thumb/test.jpg"/>',
+             '<img class="image-process-thumb" src="/tmp/derivs/thumb/test.jpg"/>',
              (
                  'tmp/test.jpg', 'thumb/test.jpg',
                  ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"]
              )),
             ('<img class="image-process-article-image" src="/tmp/test.jpg" />',
-             '<img class="image-process-article-image" '
-             'src="/tmp/derivs/article-image/test.jpg"/>',
+             '<img class="image-process-article-image" src="/tmp/derivs/article-image/test.jpg"/>',
              ('tmp/test.jpg', 'article-image/test.jpg', ["scale_in 300 300"]))
         ]
 
@@ -201,9 +233,9 @@ class HTMLGenerationTest(unittest.TestCase):
             expected_calls = [mock.call(expected_image, settings)]
             self.assertEqual(html, data[1])
             self.assertEqual(expected_calls, process_image.call_args_list)
-            process_image.reset_mock()
+            minchin.pelican.plugins.process_image.reset_mock()
 
-    @mock.patch('image_process.process_image')
+    @mock.patch('minchin.pelican.plugins.image_process.process_image')
     def test_responsive_image_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
                                 IMAGE_PROCESS_DIR='derivs')
@@ -244,8 +276,9 @@ class HTMLGenerationTest(unittest.TestCase):
              '<img class="image-process-large-photo" '
              'sizes="(min-width: 1200px) 800px, (min-width: 992px) 650px, '
              '(min-width: 768px) 718px, 100vw" src="/tmp/derivs/large-photo/'
-             '800w/test.jpg" srcset="/tmp/derivs/large-photo/600w/test.jpg '
-             '600w, /tmp/derivs/large-photo/800w/test.jpg 800w, '
+             '800w/test.jpg" '
+             'srcset="/tmp/derivs/large-photo/600w/test.jpg 600w, '
+             '/tmp/derivs/large-photo/800w/test.jpg 800w, '
              '/tmp/derivs/large-photo/1600w/test.jpg 1600w"/>',
              [('tmp/test.jpg', 'large-photo/600w/test.jpg',
                ["scale_in 600 450 True"]),
@@ -277,9 +310,9 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            process_image.reset_mock()
+            minchin.pelican.plugins.process_image.reset_mock()
 
-    @mock.patch('image_process.process_image')
+    @mock.patch('minchin.pelican.plugins.image_process.process_image')
     def test_picture_generation(self, process_image):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms,
                                 IMAGE_PROCESS_DIR='derivs')
@@ -373,7 +406,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            process_image.reset_mock()
+            minchin.pelican.plugins.process_image.reset_mock()
 
 
 if __name__ == '__main__':

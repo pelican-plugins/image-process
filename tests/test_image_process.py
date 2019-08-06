@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from shutil import rmtree
 from tempfile import mkdtemp
 
+import minchin.pelican.plugins.image_process
 from minchin.pelican.plugins.image_process import (
     harvest_images_in_fragment,
     process_image,
@@ -287,7 +288,7 @@ class HTMLGenerationTest(unittest.TestCase):
             expected_calls = [mock.call(expected_image, settings)]
             self.assertEqual(html, data[1])
             self.assertEqual(expected_calls, process_image.call_args_list)
-            minchin.pelican.plugins.process_image.reset_mock()
+            minchin.pelican.plugins.image_process.process_image.reset_mock()
 
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_responsive_image_generation(self, process_image):
@@ -403,7 +404,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            minchin.pelican.plugins.process_image.reset_mock()
+            minchin.pelican.plugins.image_process.process_image.reset_mock()
 
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_picture_generation(self, process_image):
@@ -414,16 +415,18 @@ class HTMLGenerationTest(unittest.TestCase):
             (
                 '<picture><source class="source-1" '
                 'src="/images/pelican-closeup.jpg"></source><img '
-                'class="image-process-pict" src="/images/pelican.jpg"/>'
-                "</picture>",
+                'class="image-process-pict" src="/images/pelican.jpg">'
+                '</source></picture>',
                 '<picture><source media="(min-width: 640px)" sizes="100vw" '
                 'srcset="/images/derivs/pict/default/640w/pelican.jpg 640w, '
-                "/images/derivs/pict/default/1024w/pelican.jpg 1024w, "
+                '/images/derivs/pict/default/1024w/pelican.jpg 1024w, '
                 '/images/derivs/pict/default/1600w/pelican.jpg 1600w">'
                 '</source><source srcset="/images/derivs/pict/source-1/1x/'
-                "pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/"
-                'pelican-closeup.jpg 2x"></source><img class="image-process-pict"'
-                ' src="/images/derivs/pict/default/640w/pelican.jpg"/></picture>',
+                'pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/'
+                'pelican-closeup.jpg 2x"></source><img '
+                'class="image-process-pict" '
+                'src="/images/derivs/pict/default/640w/pelican.jpg"></source>'
+                '</picture>',
                 [
                     (
                         "images/pelican.jpg",
@@ -527,7 +530,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            minchin.pelican.plugins.process_image.reset_mock()
+            minchin.pelican.plugins.image_process.process_image.reset_mock()
 
 
 if __name__ == "__main__":

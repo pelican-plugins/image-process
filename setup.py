@@ -56,7 +56,7 @@ NAME         = find_meta(*META_PATH, meta_key='title').lower()
 VERSION      = find_meta(*META_PATH, meta_key='version')
 # SHORT_DESC   = find_meta(*META_PATH, meta_key='description')
 SHORT_DESC   = find_meta(*META_PATH, meta_key='tagline')
-LONG_DESC    = read('README.rst')
+LONG_DESC    = read('Readme.rst')
 AUTHOR       = find_meta(*META_PATH, meta_key='author')
 AUTHOR_EMAIL = find_meta(*META_PATH, meta_key='email')
 URL          = find_meta(*META_PATH, meta_key='url')
@@ -83,21 +83,21 @@ EXTRA_REQUIRES = {
     ],
     'dev': [
         'pycodestyle',
-    ]
+    ],
     # 'docs': [
     #     'sphinx >= 1.4',  # theme requires at least 1.4
     #     'cloud_sptheme >=1.8',
     #     'releases',
     #     'Babel >=1.3,!=2.0',  # 2.0 breaks on Windows
     # ],
-    # 'test': [
-    #     'green >=1.9.4',  # v2 works
-    #     'coverage',
-    #     'isort',
-    #     'pydocstyle',
-    #     'pycodestyle',
-    #     'check-manifest'
-    # ],
+    'test': [
+        'mock',
+        # 'coverage',
+        # 'isort',
+        # 'pydocstyle',
+        # 'pycodestyle',
+        # 'check-manifest'
+    ],
 }
 
 # full list of Classifiers at
@@ -119,7 +119,7 @@ CLASSIFIERS = [
 
     # 'Programming Language :: Python :: 2',
     # 'Programming Language :: Python :: 2.6',
-    'Programming Language :: Python :: 2.7',
+    # 'Programming Language :: Python :: 2.7',
     # 'Programming Language :: Python :: 2 :: Only',
     'Programming Language :: Python :: 3',
     # 'Programming Language :: Python :: 3.2',
@@ -161,7 +161,7 @@ setuptools.setup(
                         'minchin.pelican',
                         'minchin.pelican.plugins',
                         ],
-    package_data={'': ['readme.rst', 'LICENSE']},
+    package_data={'': ['Readme.rst', 'LICENSE', 'CHANGELOG.rst']},
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRA_REQUIRES,

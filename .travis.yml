@@ -1,13 +1,17 @@
+# see colourettu for example on how to seperate unit tests from style tests
 language: python
 python:
   - "2.7"
   - "3.4"
   - "3.5"
   - "3.6"
+  - "3.7"
   - "nightly"
-allowed_failures:
-  - "nightly"
-install: "pip install pelican pillow beautifulsoup4 mock pycodestyle"
+matrix:
+  allow_failures:
+    - python: 2.7
+    - python: "nightly"
+install: "pip install .[all]"
 script:
   - "pycodestyle ."
   - "python tests/test_image_process.py"

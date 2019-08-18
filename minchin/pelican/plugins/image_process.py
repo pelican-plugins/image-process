@@ -24,7 +24,7 @@ from six.moves.urllib_request import pathname2url, url2pathname
 
 __title__ = "minchin.pelican.plugins.image_process"
 __tagline__ = "Pelican plugin for automating image processing. Written in Python."
-__version__ = "1.2.0"
+__version__ = "1.2.1-dev"
 __author__ = "William Minchin"
 __email__ = "w_minchin@hotmail.com"
 __license__ = "Affero GPL v3"

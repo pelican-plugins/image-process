@@ -14,19 +14,17 @@ import functools
 import os.path
 import re
 
-from PIL import Image, ImageFilter
-from bs4 import BeautifulSoup
-from pelican import signals
 import six
-
+from bs4 import BeautifulSoup
+from pelican import __version__ as pelican_version
+from pelican import signals
+from PIL import Image, ImageFilter
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
-from pelican import __version__ as pelican_version
-
 
 __title__ = "minchin.pelican.plugins.image_process"
 __tagline__ = "Pelican plugin for automating image processing. Written in Python."
-__version__ = "1.1.5-dev"
+__version__ = "1.2.0"
 __author__ = "William Minchin"
 __email__ = "w_minchin@hotmail.com"
 __license__ = "Affero GPL v3"

@@ -3,6 +3,9 @@ Image Process Changelog
 
 This Changelog is for ``minchin.pelican.plugins.image_process``.
 
+- :release:`1.2.0 <2019-08-17>`
+- :bug:`1 major` remove dependency on ``pelican.tests``
+- :feature:`5` add support for Pelican v4
 - :release:`1.1.4 <2018-01-03>`
 - :bug:`4` Fixing a bug when we use ``{attach}`` on an article (thanks
   `@cunhaax <https://github.com/cunhaax>`_)

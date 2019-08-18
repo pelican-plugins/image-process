@@ -38,6 +38,7 @@ def get_settings(**kwargs):
         "OUTPUT_PATH": "output",
         "static_content": {},
         "filenames": {},
+        "SITEURL": "//",
     }
     settings = DEFAULT_CONFIG.copy()
     for key, value in kwargs.items():
@@ -81,6 +82,7 @@ class ImageDerivativeTest(unittest.TestCase):
         "sharpen": ["sharpen"],
     }
 
+
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_extraction(self, process_image):
 
@@ -116,6 +118,7 @@ class ImageDerivativeTest(unittest.TestCase):
 
         self.assertEqual(html, expected_content)
         self.assertEqual(expected_calls, process_image.call_args_list)
+
 
     def test_transforms(self):
         settings = get_settings(IMAGE_PROCESS=self.transforms)
@@ -230,11 +233,13 @@ class HTMLGenerationTest(unittest.TestCase):
         },
     }
 
+
     def test_undefined(self):
         settings = get_settings(IMAGE_PROCESS=self.valid_transforms)
         html = '<img class="image-process-undefined" src="/tmp/test.jpg" />'
         with self.assertRaises(RuntimeError):
             harvest_images_in_fragment(html, settings)
+
 
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_image_generation(self, process_image):
@@ -289,6 +294,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(expected_calls, process_image.call_args_list)
             minchin.pelican.plugins.image_process.process_image.reset_mock()
+
 
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_responsive_image_generation(self, process_image):
@@ -405,6 +411,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(process_image.call_args_list, expected_calls)
 
             minchin.pelican.plugins.image_process.process_image.reset_mock()
+
 
     @mock.patch("minchin.pelican.plugins.image_process.process_image")
     def test_picture_generation(self, process_image):

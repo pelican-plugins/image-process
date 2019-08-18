@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "${workspaceFolder}\\env\\Scripts\\python.exe",
+    "python.pythonPath": "env\\Scripts\\python.exe",
     "restructuredtext.confPath": "c:\\Users\\William\\Documents\\Code\\minchin.pelican.plugins.image_process"
 }

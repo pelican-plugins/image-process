@@ -7,13 +7,32 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
-  - "nightly"
+  - nightly
+env:
+    - PELICAN_VERSION=3.7.1
+    - PELICAN_VERSION=false
 matrix:
+  exclude:
+    - env: PELICAN_VERSION=3.7.1
+  include:
+    - env: PELICAN_VERSION=3.7.1
+      python: "3.6"
   allow_failures:
     - python: "2.7"
-    - python: "nightly"
+    - python: nightly
 cache: pip
-install: "pip install .[all]"
+before_install: python -m pip install pip --upgrade
+install:
+  - pip install .[all]
+  - |
+    if [ "$PELICAN_VERSION" == "false" ]
+    then
+      echo "Default Pelican version"
+    else
+      pip uninstall -y pelican
+      pip install pelican==$PELICAN_VERSION
+    fi
+before_script: pelican --version
 script:
-  - "pycodestyle ."
-  - "python tests/test_image_process.py"
+  - pycodestyle .
+  - python tests/test_image_process.py

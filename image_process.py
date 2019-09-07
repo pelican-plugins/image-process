@@ -7,6 +7,7 @@ This plugin process images according to their class attribute.
 """
 from __future__ import unicode_literals
 
+from logging import warning
 import copy
 import collections
 import functools
@@ -506,5 +507,17 @@ def process_image(image, settings):
         i.save(image[1])
 
 
+def deprication_warning(pelican_object):
+    warning_message = """
+    Installing the plugin image_process through
+    git submodules is depricated.
+
+    You can now install the plugin through pip.
+    Check https://pypi.org/project/pelican-image_process/
+    for more information."""
+    warning(warning_message)
+
+
 def register():
+    signals.initialized.connect(deprication_warning)
     signals.content_written.connect(harvest_images)

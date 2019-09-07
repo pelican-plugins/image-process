@@ -25,7 +25,7 @@ will also install the required dependencies automatically.
 
 .. code-block:: sh
 
-  pip install minchin.pelican.plugins.image_process
+  pip install pelican-image_process
 
 Then, in your ``pelicanconf.py`` file, add *Image Process* to your list of
 plugins:
@@ -34,32 +34,24 @@ plugins:
 
   PLUGINS = [
               # ...
-              'minchin.pelican.plugins.image_process',
+              'pelican-image_process',
               # ...
             ]
 
 You will also need to configure your desired transformations (see *Usage*
 below) and add the appropriate class to images you want processed.
 
+Plugin development
+==================
 
-Requirements
-============
-
-*Image Process* requires Beautiful Soup, Pillow, Six, and Pelican. All
-these can be manually installed with pip:
-
-.. code-block:: sh
-
-   pip install pillow beautifulsoup4 six pelican
-
-If you encounter errors while processing JPEG files, you may need to install
-the JPEG development library:
+If you want to contribute to this plugin you can easily check out this project and
+use a Pipenv based virtual environment to develop.
+Shortcuts through a ``Makefile`` are provided for development:
 
 .. code-block:: sh
 
-   pip uninstall pillow
-   apt-get install libjpeg-dev
-   pip install pillow
+  make lint
+  make unittest
 
 
 Usage
@@ -510,6 +502,3 @@ Credits
 
 Pelican image in test data by Jon Sullivan. Source:
 http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726
-
-Original Plugin developed by the team at
-`Whisky Echo Bravo <https://github.com/whiskyechobravo/image_process>`_.

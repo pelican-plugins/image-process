@@ -1,7 +1,6 @@
 include *.in
 include *.py
 include *.rst
-include *.yaml
 include LICENSE
 recursive-include tests *.jpg
 recursive-include tests *.png

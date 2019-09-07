@@ -1,7 +1,21 @@
 Image Process Changelog
 =======================
 
-This Changelog is for ``minchin.pelican.plugins.image_process``.
+1.3.0
+=====
+
+A new release to PyPi intended to replace the git submodule based installation
+while providing the following improvements next to the earlier onces of Minchin:
+
+* TODO:
+
+
+This Changelog is from ``minchin.pelican.plugins.image_process``.
+================================================================
+
+`@Minchin <https://github.com/MinchinWeb>`_ did a good job to work on this project
+while it was not maintained.
+Thanks!
 
 - :release:`1.2.0 <2019-08-17>`
 - :bug:`1 major` remove dependency on ``pelican.tests``

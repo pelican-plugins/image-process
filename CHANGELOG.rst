@@ -7,8 +7,6 @@ Image Process Changelog
 A new release to PyPi intended to replace the git submodule based installation
 while providing the following improvements next to the earlier onces of Minchin:
 
-* TODO:
-
 
 This Changelog is from ``minchin.pelican.plugins.image_process``.
 ================================================================

@@ -11,6 +11,7 @@ pelican = "*"
 six = "*"
 pillow = "*"
 pycodestyle = "*"
+twine = "*"
 
 [requires]
 python_version = "3.7"

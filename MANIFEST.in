@@ -1,6 +1,7 @@
-include *.in
+include MANIFEST.in
 include *.py
-include *.rst
+include README.rst
 include LICENSE
 recursive-include tests *.jpg
 recursive-include tests *.png
+recursive-exclude tests *

@@ -7,8 +7,8 @@ from contextlib import contextmanager
 from shutil import rmtree
 from tempfile import mkdtemp
 
-import image_process
-from image_process import (
+import pelican_image_process
+from pelican_image_process import (
     harvest_images_in_fragment,
     process_image,
 )
@@ -82,7 +82,7 @@ class ImageDerivativeTest(unittest.TestCase):
         "sharpen": ["sharpen"],
     }
 
-    @mock.patch("image_process.process_image")
+    @mock.patch("pelican_image_process.process_image")
     def test_extraction(self, process_image):
 
         settings = get_settings(
@@ -238,7 +238,7 @@ class HTMLGenerationTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             harvest_images_in_fragment(html, settings)
 
-    @mock.patch("image_process.process_image")
+    @mock.patch("pelican_image_process.process_image")
     def test_image_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -290,9 +290,9 @@ class HTMLGenerationTest(unittest.TestCase):
             expected_calls = [mock.call(expected_image, settings)]
             self.assertEqual(html, data[1])
             self.assertEqual(expected_calls, process_image.call_args_list)
-            image_process.process_image.reset_mock()
+            pelican_image_process.process_image.reset_mock()
 
-    @mock.patch("image_process.process_image")
+    @mock.patch("pelican_image_process.process_image")
     def test_responsive_image_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -406,9 +406,9 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            image_process.process_image.reset_mock()
+            pelican_image_process.process_image.reset_mock()
 
-    @mock.patch("image_process.process_image")
+    @mock.patch("pelican_image_process.process_image")
     def test_picture_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -532,7 +532,7 @@ class HTMLGenerationTest(unittest.TestCase):
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            image_process.process_image.reset_mock()
+            pelican_image_process.process_image.reset_mock()
 
 
 if __name__ == "__main__":

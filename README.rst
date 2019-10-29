@@ -2,6 +2,9 @@
  Image Process
 ==============
 
+.. image:: https://travis-ci.org/whiskyechobravo/image_process.svg?branch=master
+    :target: https://travis-ci.org/whiskyechobravo/image_process
+
 *Image Process* is a plugin for `Pelican <http://docs.getpelican.com/>`_,
 a static site generator written in Python.
 

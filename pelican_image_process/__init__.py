@@ -589,7 +589,7 @@ def process_image(image, settings):
         # `save_all=True`  will allow saving multi-page (aka animated) GIF's
         # however, turning it on seems to break PNG support, and doesn't seem
         # to work on GIF's either...
-        i.save(image[1])
+        i.save(image[1], progressive=True)
 
 
 def register():

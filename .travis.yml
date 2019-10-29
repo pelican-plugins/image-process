@@ -1,0 +1,12 @@
+sudo: false
+language: python
+cache: pip
+python:
+  - "3.7"
+install:
+  - pip install pipenv --upgrade
+  - pipenv install
+script:
+  - make lint
+  - make unittest
+  - make build

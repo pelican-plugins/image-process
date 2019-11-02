@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pelican_image_process',
-      version='1.3.0',
+      version='1.4.0-dev',
       url='https://github.com/whiskyechobravo/image_process',
       author="whiskyechobravo and other contributors",
       author_email="info@whiskyechobravo.com",

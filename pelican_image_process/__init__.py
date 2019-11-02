@@ -60,10 +60,10 @@ def convert_box(image, top, left, right, bottom):
     return (top, left, right, bottom)
 
 
-def crop(i, top, left, right, bottom):
+def crop(i, left, top, right, bottom):
     """Crop image i to the box (left, top)-(right, bottom).
 
-    top, left, right, bottom must be strings specifying
+    left, top, right, bottom must be strings specifying
     either a number or a percentage.
     """
     top, left, right, bottom = convert_box(i, top, left, right, bottom)

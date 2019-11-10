@@ -1,7 +1,7 @@
 Image Process Changelog
 =======================
 
-1.4.0-dev
+2.0.0-dev
 =========
 
 * crop method API changed from (i, top, left, right, bottom) to (i, left, top, right, bottom)

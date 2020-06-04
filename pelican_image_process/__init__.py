@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import collections
 import copy
 import functools
+import logging
 import os.path
 import posixpath
 import re
@@ -22,6 +23,8 @@ from PIL import Image, ImageFilter
 from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
+
+log = logging.getLogger(__name__)
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
@@ -179,6 +182,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
+    log.debug('process_images: harvest %r', path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -558,6 +562,8 @@ def process_image(image, settings):
     image[0] = unquote(image[0])
     image[1] = unquote(image[1])
     # image[2] is the transformation
+
+    log.debug('image_process: {} -> {}'.format(image[0], image[1]))
 
     path, _ = os.path.split(image[1])
     try:

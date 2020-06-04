@@ -315,6 +315,11 @@ def build_srcset(img, settings, derivative):
 
     default = process["default"]
     if isinstance(default, six.string_types):
+        breakpoints = {i for i, _ in process["srcset"]}
+        if default not in breakpoints:
+            log.error(
+                'image_process: srcset "%s" does not define default "%s"',
+                derivative, default)
         default_name = default
     elif isinstance(default, list):
         default_name = "default"

@@ -261,7 +261,9 @@ def compute_paths(img, settings, derivative):
         file_paths = settings["static_content"]
 
     for f, contobj in file_paths.items():
-        if img_src_path.endswith(contobj.get_url_setting("save_as")):
+        save_as = contobj.get_url_setting("save_as")
+        # save_as can be set to empty string, which would match everything
+        if save_as and img_src_path.endswith(save_as):
             source = contobj.source_path
             base_path = os.path.join(
                 contobj.settings["OUTPUT_PATH"],

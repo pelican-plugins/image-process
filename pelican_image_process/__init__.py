@@ -30,7 +30,7 @@ IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
 
 Path = collections.namedtuple(
-    "Path", ["base_url", "source", "base_path", "filename", "process_dir"]
+    "Path", ["base_url", "source", "base_path", "filename"]
 )
 
 
@@ -293,7 +293,7 @@ def compute_paths(img, settings, derivative):
             settings["OUTPUT_PATH"], os.path.dirname(src_path), derivative_path
         )
 
-    return Path(base_url, source, base_path, filename, process_dir)
+    return Path(base_url, source, base_path, filename)
 
 
 def process_img_tag(img, settings, derivative):

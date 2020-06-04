@@ -11,6 +11,7 @@ import collections
 import copy
 import functools
 import os.path
+import posixpath
 import re
 
 import six
@@ -247,10 +248,12 @@ def harvest_images_in_fragment(fragment, settings):
 def compute_paths(img, settings, derivative):
     process_dir = settings["IMAGE_PROCESS_DIR"]
     img_src = urlparse(img["src"])
-    img_src_path = url2pathname(img_src.path[1:])
+    img_src_path = url2pathname(img_src.path.lstrip('/'))
     img_src_dirname, filename = os.path.split(img_src_path)
     derivative_path = os.path.join(process_dir, derivative)
-    base_url = urljoin(img_src.geturl(), pathname2url(derivative_path))
+    # urljoin truncates leading ../ elements
+    base_url = posixpath.join(posixpath.dirname(img["src"]),
+                              pathname2url(derivative_path))
 
     if PELICAN_MAJOR_VERSION < 4:
         file_paths = settings["filenames"]

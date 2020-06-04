@@ -294,7 +294,7 @@ def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
-    img["src"] = os.path.join(path.base_url, path.filename).replace("\\", "/")
+    img["src"] = posixpath.join(path.base_url, path.filename)
     destination = os.path.join(path.base_path, path.filename)
 
     if not isinstance(process, list):
@@ -315,18 +315,14 @@ def build_srcset(img, settings, derivative):
         destination = os.path.join(path.base_path, default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
-    img["src"] = os.path.join(
-        path.base_url, default_name, path.filename
-    ).replace("\\", "/")
+    img["src"] = posixpath.join(path.base_url, default_name, path.filename)
 
     if "sizes" in process:
         img["sizes"] = process["sizes"]
 
     srcset = []
     for src in process["srcset"]:
-        file_path = os.path.join(path.base_url, src[0], path.filename).replace(
-            "\\", "/"
-        )
+        file_path = posixpath.join(path.base_url, src[0], path.filename)
         srcset.append("%s %s" % (file_path, src[0]))
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
@@ -476,9 +472,7 @@ def process_picture(soup, img, group, settings, derivative):
             del s["element"]["class"]
 
         url_path, s["filename"] = os.path.split(s["url"])
-        s["base_url"] = os.path.join(
-            url_path, process_dir, derivative
-        ).replace("\\", "/")
+        s["base_url"] = posixpath.join(url_path, process_dir, derivative)
         s["base_path"] = os.path.join(
             settings["OUTPUT_PATH"], s["base_url"][1:]
         )
@@ -517,12 +511,12 @@ def process_picture(soup, img, group, settings, derivative):
             process_image((source, destination, default[1]), settings)
 
         # Change img src to url of default processed image.
-        img["src"] = os.path.join(
+        img["src"] = posixpath.join(
             s["base_url"],
             default_source_name,
             default_item_name,
             default_source["filename"],
-        ).replace("\\", "/")
+        )
 
     # Generate srcsets and put back <source>s in <picture>.
     for s in sources:
@@ -531,9 +525,9 @@ def process_picture(soup, img, group, settings, derivative):
             srcset.append(
                 "%s %s"
                 % (
-                    os.path.join(
+                    posixpath.join(
                         s["base_url"], s["name"], src[0], s["filename"]
-                    ).replace("\\", "/"),
+                    ),
                     src[0],
                 )
             )

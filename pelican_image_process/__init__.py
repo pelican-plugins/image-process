@@ -232,7 +232,7 @@ def harvest_images_in_fragment(fragment, settings):
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
-        elif d["type"] == "responsive-image":
+        elif d["type"] == "responsive-image" and 'srcset' not in img.attrs:
             # srcset image specification.
             build_srcset(img, settings, derivative)
 

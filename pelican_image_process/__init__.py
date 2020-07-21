@@ -570,13 +570,7 @@ def process_image(image, settings):
 
     log.debug('image_process: {} -> {}'.format(image[0], image[1]))
 
-    path, _ = os.path.split(image[1])
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno == 17:
-            # Already exists
-            pass
+    os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced

@@ -478,11 +478,11 @@ File Encoding
 ~~~~~~~~~~~~~
 
 You may select a different file encoding to be used by BeautifulSoup as it
-opens your files. The default is ``uft-8``.
+opens your files. The default is ``utf-8``.
 
 .. code-block:: python
 
-  IMAGE_PROCESS_ENCODING = "uft-8"
+  IMAGE_PROCESS_ENCODING = "utf-8"
 
 
 Known Issues

@@ -91,6 +91,10 @@ class ImageDerivativeTest(unittest.TestCase):
         html = (
             '<img class="test image-process image-process-crop test2"'
             ' src="/tmp/test.jpg" />'
+            '<img class="test image-process image-process-crop test2"'
+            ' src="../tmp/test.jpg" />'
+            '<img class="test image-process image-process-crop test2"'
+            ' src="http://xxx/tmp/test.jpg" />'
         )
 
         html = harvest_images_in_fragment(html, settings)
@@ -98,6 +102,10 @@ class ImageDerivativeTest(unittest.TestCase):
         expected_content = (
             '<img class="test image-process image-process-crop'
             ' test2" src="/tmp/derivatives/crop/test.jpg"/>'
+            '<img class="test image-process image-process-crop'
+            ' test2" src="../tmp/derivatives/crop/test.jpg"/>'
+            '<img class="test image-process image-process-crop'
+            ' test2" src="http://xxx/tmp/derivatives/crop/test.jpg"/>'
         )
 
         expected_source = os.path.join(settings["PATH"], "tmp/test.jpg")

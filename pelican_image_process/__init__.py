@@ -10,7 +10,9 @@ from __future__ import unicode_literals
 import collections
 import copy
 import functools
+import logging
 import os.path
+import posixpath
 import re
 
 import six
@@ -22,11 +24,13 @@ from six.moves.urllib_parse import unquote, urljoin, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
 
+log = logging.getLogger(__name__)
+
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
 
 Path = collections.namedtuple(
-    "Path", ["base_url", "source", "base_path", "filename", "process_dir"]
+    "Path", ["base_url", "source", "base_path", "filename"]
 )
 
 
@@ -178,6 +182,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
+    log.debug('process_images: harvest %r', path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -227,7 +232,7 @@ def harvest_images_in_fragment(fragment, settings):
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
-        elif d["type"] == "responsive-image":
+        elif d["type"] == "responsive-image" and 'srcset' not in img.attrs:
             # srcset image specification.
             build_srcset(img, settings, derivative)
 
@@ -247,10 +252,12 @@ def harvest_images_in_fragment(fragment, settings):
 def compute_paths(img, settings, derivative):
     process_dir = settings["IMAGE_PROCESS_DIR"]
     img_src = urlparse(img["src"])
-    img_src_path = url2pathname(img_src.path[1:])
+    img_src_path = url2pathname(img_src.path.lstrip('/'))
     img_src_dirname, filename = os.path.split(img_src_path)
     derivative_path = os.path.join(process_dir, derivative)
-    base_url = urljoin(img_src.geturl(), pathname2url(derivative_path))
+    # urljoin truncates leading ../ elements
+    base_url = posixpath.join(posixpath.dirname(img["src"]),
+                              pathname2url(derivative_path))
 
     if PELICAN_MAJOR_VERSION < 4:
         file_paths = settings["filenames"]
@@ -258,7 +265,9 @@ def compute_paths(img, settings, derivative):
         file_paths = settings["static_content"]
 
     for f, contobj in file_paths.items():
-        if img_src_path.endswith(contobj.get_url_setting("save_as")):
+        save_as = contobj.get_url_setting("save_as")
+        # save_as can be set to empty string, which would match everything
+        if save_as and img_src_path.endswith(save_as):
             source = contobj.source_path
             base_path = os.path.join(
                 contobj.settings["OUTPUT_PATH"],
@@ -284,14 +293,14 @@ def compute_paths(img, settings, derivative):
             settings["OUTPUT_PATH"], os.path.dirname(src_path), derivative_path
         )
 
-    return Path(base_url, source, base_path, filename, process_dir)
+    return Path(base_url, source, base_path, filename)
 
 
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
-    img["src"] = os.path.join(path.base_url, path.filename).replace("\\", "/")
+    img["src"] = posixpath.join(path.base_url, path.filename)
     destination = os.path.join(path.base_path, path.filename)
 
     if not isinstance(process, list):
@@ -306,24 +315,25 @@ def build_srcset(img, settings, derivative):
 
     default = process["default"]
     if isinstance(default, six.string_types):
+        breakpoints = {i for i, _ in process["srcset"]}
+        if default not in breakpoints:
+            log.error(
+                'image_process: srcset "%s" does not define default "%s"',
+                derivative, default)
         default_name = default
     elif isinstance(default, list):
         default_name = "default"
         destination = os.path.join(path.base_path, default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
-    img["src"] = os.path.join(
-        path.base_url, default_name, path.filename
-    ).replace("\\", "/")
+    img["src"] = posixpath.join(path.base_url, default_name, path.filename)
 
     if "sizes" in process:
         img["sizes"] = process["sizes"]
 
     srcset = []
     for src in process["srcset"]:
-        file_path = os.path.join(path.base_url, src[0], path.filename).replace(
-            "\\", "/"
-        )
+        file_path = posixpath.join(path.base_url, src[0], path.filename)
         srcset.append("%s %s" % (file_path, src[0]))
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
@@ -473,9 +483,7 @@ def process_picture(soup, img, group, settings, derivative):
             del s["element"]["class"]
 
         url_path, s["filename"] = os.path.split(s["url"])
-        s["base_url"] = os.path.join(
-            url_path, process_dir, derivative
-        ).replace("\\", "/")
+        s["base_url"] = posixpath.join(url_path, process_dir, derivative)
         s["base_path"] = os.path.join(
             settings["OUTPUT_PATH"], s["base_url"][1:]
         )
@@ -514,12 +522,12 @@ def process_picture(soup, img, group, settings, derivative):
             process_image((source, destination, default[1]), settings)
 
         # Change img src to url of default processed image.
-        img["src"] = os.path.join(
+        img["src"] = posixpath.join(
             s["base_url"],
             default_source_name,
             default_item_name,
             default_source["filename"],
-        ).replace("\\", "/")
+        )
 
     # Generate srcsets and put back <source>s in <picture>.
     for s in sources:
@@ -528,9 +536,9 @@ def process_picture(soup, img, group, settings, derivative):
             srcset.append(
                 "%s %s"
                 % (
-                    os.path.join(
+                    posixpath.join(
                         s["base_url"], s["name"], src[0], s["filename"]
-                    ).replace("\\", "/"),
+                    ),
                     src[0],
                 )
             )
@@ -560,13 +568,9 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    path, _ = os.path.split(image[1])
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno == 17:
-            # Already exists
-            pass
+    log.debug('image_process: {} -> {}'.format(image[0], image[1]))
+
+    os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced

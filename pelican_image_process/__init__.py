@@ -14,6 +14,7 @@ import logging
 import os.path
 import posixpath
 import re
+import html
 
 import six
 from bs4 import BeautifulSoup
@@ -196,6 +197,30 @@ def harvest_images(path, context):
         f.seek(0)
         f.truncate()
         f.write(res)
+
+
+def harvest_feed_images(path, context, feed):
+    # Set default value for 'IMAGE_PROCESS_DIR'.
+    if "IMAGE_PROCESS_DIR" not in context:
+        context["IMAGE_PROCESS_DIR"] = "derivatives"
+
+    # Set default value for 'IMAGE_PROCESS_ENCODING'
+    if "IMAGE_PROCESS_ENCODING" not in context:
+        context["IMAGE_PROCESS_ENCODING"] = "utf-8"
+
+    with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
+        soup = BeautifulSoup(f, "xml")
+
+        for content in soup.find_all("content"):
+            if content["type"] != "html":
+                continue
+
+            doc = html.unescape(content.string)
+            res = harvest_images_in_fragment(doc, context)
+            content.string = res
+        f.seek(0)
+        f.truncate()
+        f.write(str(soup))
 
 
 def harvest_images_in_fragment(fragment, settings):
@@ -598,3 +623,4 @@ def process_image(image, settings):
 
 def register():
     signals.content_written.connect(harvest_images)
+    signals.feed_written.connect(harvest_feed_images)

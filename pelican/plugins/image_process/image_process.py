@@ -5,34 +5,29 @@ Image Process
 This plugin process images according to their class attribute.
 """
 
-from __future__ import unicode_literals
-
 import collections
 import copy
 import functools
+import html
 import logging
 import os.path
 import posixpath
 import re
-import html
 
-import six
-from bs4 import BeautifulSoup
-from pelican import __version__ as pelican_version
-from pelican import signals
 from PIL import Image, ImageFilter
-from six.moves.urllib_parse import unquote, urljoin, urlparse
+from bs4 import BeautifulSoup
+import six
+from six.moves.urllib_parse import unquote, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
+from pelican import __version__ as pelican_version, signals
 
 log = logging.getLogger(__name__)
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
 
-Path = collections.namedtuple(
-    "Path", ["base_url", "source", "base_path", "filename"]
-)
+Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filename"])
 
 
 def convert_box(image, top, left, right, bottom):
@@ -168,9 +163,7 @@ basic_ops = {
     "blur": functools.partial(apply_filter, f=ImageFilter.BLUR),
     "contour": functools.partial(apply_filter, f=ImageFilter.CONTOUR),
     "detail": functools.partial(apply_filter, f=ImageFilter.DETAIL),
-    "edge_enhance": functools.partial(
-        apply_filter, f=ImageFilter.EDGE_ENHANCE
-    ),
+    "edge_enhance": functools.partial(apply_filter, f=ImageFilter.EDGE_ENHANCE),
     "edge_enhance_more": functools.partial(
         apply_filter, f=ImageFilter.EDGE_ENHANCE_MORE
     ),
@@ -183,7 +176,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
-    log.debug('process_images: harvest %r', path)
+    log.debug("process_images: harvest %r", path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -257,7 +250,7 @@ def harvest_images_in_fragment(fragment, settings):
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
-        elif d["type"] == "responsive-image" and 'srcset' not in img.attrs:
+        elif d["type"] == "responsive-image" and "srcset" not in img.attrs:
             # srcset image specification.
             build_srcset(img, settings, derivative)
 
@@ -265,9 +258,7 @@ def harvest_images_in_fragment(fragment, settings):
             # Multiple source (picture) specification.
             group = img.find_parent()
             if group.name == "div":
-                convert_div_to_picture_tag(
-                    soup, img, group, settings, derivative
-                )
+                convert_div_to_picture_tag(soup, img, group, settings, derivative)
             elif group.name == "picture":
                 process_picture(soup, img, group, settings, derivative)
 
@@ -277,12 +268,13 @@ def harvest_images_in_fragment(fragment, settings):
 def compute_paths(img, settings, derivative):
     process_dir = settings["IMAGE_PROCESS_DIR"]
     img_src = urlparse(img["src"])
-    img_src_path = url2pathname(img_src.path.lstrip('/'))
+    img_src_path = url2pathname(img_src.path.lstrip("/"))
     img_src_dirname, filename = os.path.split(img_src_path)
     derivative_path = os.path.join(process_dir, derivative)
     # urljoin truncates leading ../ elements
-    base_url = posixpath.join(posixpath.dirname(img["src"]),
-                              pathname2url(derivative_path))
+    base_url = posixpath.join(
+        posixpath.dirname(img["src"]), pathname2url(derivative_path)
+    )
 
     if PELICAN_MAJOR_VERSION < 4:
         file_paths = settings["filenames"]
@@ -344,7 +336,9 @@ def build_srcset(img, settings, derivative):
         if default not in breakpoints:
             log.error(
                 'image_process: srcset "%s" does not define default "%s"',
-                derivative, default)
+                derivative,
+                default,
+            )
         default_name = default
     elif isinstance(default, list):
         default_name = "default"
@@ -390,9 +384,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         url_path, s["filename"] = os.path.split(s["url"])
         s["base_url"] = os.path.join(url_path, process_dir, derivative)
-        s["base_path"] = os.path.join(
-            settings["OUTPUT_PATH"], s["base_url"][1:]
-        )
+        s["base_path"] = os.path.join(settings["OUTPUT_PATH"], s["base_url"][1:])
 
     # If default is not None, change default img source to the image
     # derivative referenced.
@@ -447,17 +439,13 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
             srcset.append(
                 "%s %s"
                 % (
-                    os.path.join(
-                        s["base_url"], s["name"], src[0], s["filename"]
-                    ),
+                    os.path.join(s["base_url"], s["name"], src[0], s["filename"]),
                     src[0],
                 )
             )
 
             source = os.path.join(settings["PATH"], s["url"][1:])
-            destination = os.path.join(
-                s["base_path"], s["name"], src[0], s["filename"]
-            )
+            destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
             process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
@@ -509,9 +497,7 @@ def process_picture(soup, img, group, settings, derivative):
 
         url_path, s["filename"] = os.path.split(s["url"])
         s["base_url"] = posixpath.join(url_path, process_dir, derivative)
-        s["base_path"] = os.path.join(
-            settings["OUTPUT_PATH"], s["base_url"][1:]
-        )
+        s["base_path"] = os.path.join(settings["OUTPUT_PATH"], s["base_url"][1:])
 
     # If default is not None, change default img source to the image
     # derivative referenced.
@@ -561,17 +547,13 @@ def process_picture(soup, img, group, settings, derivative):
             srcset.append(
                 "%s %s"
                 % (
-                    posixpath.join(
-                        s["base_url"], s["name"], src[0], s["filename"]
-                    ),
+                    posixpath.join(s["base_url"], s["name"], src[0], s["filename"]),
                     src[0],
                 )
             )
 
             source = os.path.join(settings["PATH"], s["url"][1:])
-            destination = os.path.join(
-                s["base_path"], s["name"], src[0], s["filename"]
-            )
+            destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
             process_image((source, destination, src[1]), settings)
 
         if len(srcset) > 0:
@@ -593,7 +575,7 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    log.debug('image_process: {} -> {}'.format(image[0], image[1]))
+    log.debug("image_process: {} -> {}".format(image[0], image[1]))
 
     os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 

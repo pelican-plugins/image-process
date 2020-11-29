@@ -1,26 +1,14 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-import os
-import unittest
 from contextlib import contextmanager
+import os
 from shutil import rmtree
 from tempfile import mkdtemp
-
-import pelican_image_process
-from pelican_image_process import (
-    harvest_images_in_fragment,
-    process_image,
-)
+import unittest
+from unittest.mock import patch
 
 # from pelican.tests.support import get_settings, temporary_folder, unittest
 from PIL import Image, ImageChops
 
-try:
-    import unittest.mock as mock  # python < 3.3
-except ImportError:
-    import mock
-
+from pelican.plugins.image_process import harvest_images_in_fragment, process_image
 
 CUR_DIR = os.path.dirname(__file__)
 TEST_IMAGES = [
@@ -82,7 +70,7 @@ class ImageDerivativeTest(unittest.TestCase):
         "sharpen": ["sharpen"],
     }
 
-    @mock.patch("pelican_image_process.process_image")
+    @patch("pelican.plugins.image_process.process_image")
     def test_extraction(self, process_image):
 
         settings = get_settings(
@@ -121,7 +109,7 @@ class ImageDerivativeTest(unittest.TestCase):
             expected_destination,
             ["crop 10 20 100 200"],
         )
-        expected_calls = [mock.call(expected_image, settings)]
+        expected_calls = [unittest.mock.call(expected_image, settings)]
 
         self.assertEqual(html, expected_content)
         self.assertEqual(expected_calls, process_image.call_args_list)
@@ -146,11 +134,7 @@ class ImageDerivativeTest(unittest.TestCase):
             self.assertEqual(img_diff, None)
 
         with temporary_folder() as tmpdir:
-            [
-                test_transform(d, i, tmpdir)
-                for d in self.transforms
-                for i in TEST_IMAGES
-            ]
+            [test_transform(d, i, tmpdir) for d in self.transforms for i in TEST_IMAGES]
 
 
 class HTMLGenerationTest(unittest.TestCase):
@@ -246,7 +230,7 @@ class HTMLGenerationTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             harvest_images_in_fragment(html, settings)
 
-    @mock.patch("pelican_image_process.process_image")
+    @patch("pelican.plugins.image_process.process_image")
     def test_image_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -260,22 +244,14 @@ class HTMLGenerationTest(unittest.TestCase):
                 (
                     "tmp/test.jpg",
                     "thumb/test.jpg",
-                    [
-                        "crop 0 0 50% 50%",
-                        "scale_out 150 150",
-                        "crop 0 0 150 150",
-                    ],
+                    ["crop 0 0 50% 50%", "scale_out 150 150", "crop 0 0 150 150"],
                 ),
             ),
             (
                 '<img class="image-process-article-image" src="/tmp/test.jpg" />',
                 '<img class="image-process-article-image" '
                 'src="/tmp/derivs/article-image/test.jpg"/>',
-                (
-                    "tmp/test.jpg",
-                    "article-image/test.jpg",
-                    ["scale_in 300 300"],
-                ),
+                ("tmp/test.jpg", "article-image/test.jpg", ["scale_in 300 300"],),
             ),
         ]
 
@@ -295,12 +271,12 @@ class HTMLGenerationTest(unittest.TestCase):
                 data[2][2],
             )
 
-            expected_calls = [mock.call(expected_image, settings)]
+            expected_calls = [unittest.mock.call(expected_image, settings)]
             self.assertEqual(html, data[1])
             self.assertEqual(expected_calls, process_image.call_args_list)
-            pelican_image_process.process_image.reset_mock()
+            process_image.reset_mock()
 
-    @mock.patch("pelican_image_process.process_image")
+    @patch("pelican.plugins.image_process.process_image")
     def test_responsive_image_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -314,21 +290,9 @@ class HTMLGenerationTest(unittest.TestCase):
                 "/tmp/derivs/crisp/2x/test.jpg 2x, "
                 '/tmp/derivs/crisp/4x/test.jpg 4x"/>',
                 [
-                    (
-                        "tmp/test.jpg",
-                        "crisp/1x/test.jpg",
-                        ["scale_in 800 600 True"],
-                    ),
-                    (
-                        "tmp/test.jpg",
-                        "crisp/2x/test.jpg",
-                        ["scale_in 1600 1200 True"],
-                    ),
-                    (
-                        "tmp/test.jpg",
-                        "crisp/4x/test.jpg",
-                        ["scale_in 3200 2400 True"],
-                    ),
+                    ("tmp/test.jpg", "crisp/1x/test.jpg", ["scale_in 800 600 True"],),
+                    ("tmp/test.jpg", "crisp/2x/test.jpg", ["scale_in 1600 1200 True"],),
+                    ("tmp/test.jpg", "crisp/4x/test.jpg", ["scale_in 3200 2400 True"],),
                 ],
             ),
             (
@@ -345,11 +309,7 @@ class HTMLGenerationTest(unittest.TestCase):
                         "crisp2/default/test.jpg",
                         ["scale_in 400 300 True"],
                     ),
-                    (
-                        "tmp/test.jpg",
-                        "crisp2/1x/test.jpg",
-                        ["scale_in 800 600 True"],
-                    ),
+                    ("tmp/test.jpg", "crisp2/1x/test.jpg", ["scale_in 800 600 True"],),
                     (
                         "tmp/test.jpg",
                         "crisp2/2x/test.jpg",
@@ -400,23 +360,20 @@ class HTMLGenerationTest(unittest.TestCase):
             for t in data[2]:
                 expected_source = os.path.join(settings["PATH"], t[0])
                 expected_destination = os.path.join(
-                    settings["OUTPUT_PATH"],
-                    "tmp",
-                    settings["IMAGE_PROCESS_DIR"],
-                    t[1],
+                    settings["OUTPUT_PATH"], "tmp", settings["IMAGE_PROCESS_DIR"], t[1],
                 )
 
                 expected_image = (expected_source, expected_destination, t[2])
                 expected_images.append(expected_image)
-                expected_calls.append(mock.call(expected_image, settings))
+                expected_calls.append(unittest.mock.call(expected_image, settings))
 
             self.maxDiff = None
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            pelican_image_process.process_image.reset_mock()
+            process_image.reset_mock()
 
-    @mock.patch("pelican_image_process.process_image")
+    @patch("pelican.plugins.image_process.process_image")
     def test_picture_generation(self, process_image):
         settings = get_settings(
             IMAGE_PROCESS=self.valid_transforms, IMAGE_PROCESS_DIR="derivs"
@@ -426,17 +383,17 @@ class HTMLGenerationTest(unittest.TestCase):
                 '<picture><source class="source-1" '
                 'src="/images/pelican-closeup.jpg"/><img '
                 'class="image-process-pict" src="/images/pelican.jpg"/>'
-                '</picture>',
+                "</picture>",
                 '<picture><source media="(min-width: 640px)" sizes="100vw" '
                 'srcset="/images/derivs/pict/default/640w/pelican.jpg 640w, '
-                '/images/derivs/pict/default/1024w/pelican.jpg 1024w, '
+                "/images/derivs/pict/default/1024w/pelican.jpg 1024w, "
                 '/images/derivs/pict/default/1600w/pelican.jpg 1600w"/>'
                 '<source srcset="/images/derivs/pict/source-1/1x/'
-                'pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/'
+                "pelican-closeup.jpg 1x, /images/derivs/pict/source-1/2x/"
                 'pelican-closeup.jpg 2x"/><img '
                 'class="image-process-pict" '
                 'src="/images/derivs/pict/default/640w/pelican.jpg"/>'
-                '</picture>',
+                "</picture>",
                 [
                     (
                         "images/pelican.jpg",
@@ -534,13 +491,13 @@ class HTMLGenerationTest(unittest.TestCase):
 
                 expected_image = (expected_source, expected_destination, t[2])
                 expected_images.append(expected_image)
-                expected_calls.append(mock.call(expected_image, settings))
+                expected_calls.append(unittest.mock.call(expected_image, settings))
 
             self.maxDiff = None
             self.assertEqual(html, data[1])
             self.assertEqual(process_image.call_args_list, expected_calls)
 
-            pelican_image_process.process_image.reset_mock()
+            process_image.reset_mock()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "pelican-image-process"
+version = "2.0.0-dev"
+description = "A Pelican plugin to automate image processing."
+authors = ["Pelican Dev Team <authors@getpelican.com>"]
+license = "AGPL-3.0"
+readme = "README.md"
+keywords = ["pelican", "plugin", "image", "responsive", "optimization"]
+repository = "https://github.com/pelican-plugins/image-process"
+documentation = "https://docs.getpelican.com"
+packages = [
+    { include = "pelican" },
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Framework :: Pelican",
+    "Framework :: Pelican :: Plugins",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[tool.poetry.urls]
+"Funding" = "https://donate.getpelican.com/"
+"Issue Tracker" = "https://github.com/pelican-plugins/image-process/issues"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+pelican = "^4.5"
+markdown = {version = "^3.2.2", optional = true}
+beautifulsoup4 = "^4.9.3"
+six = "^1.15.0"
+Pillow = "^8.0.1"
+
+[tool.poetry.dev-dependencies]
+black = {version = "^19.10b0", allow-prereleases = true}
+flake8 = "^3.8"
+flake8-black = "^0.2.0"
+invoke = "^1.3"
+isort = "^5.4"
+livereload = "^2.6"
+markdown = "^3.2.2"
+pytest = "^6.0"
+pytest-cov = "^2.8"
+pytest-pythonpath = "^0.7.3"
+pytest-sugar = "^0.9.4"
+Werkzeug = "^1.0"
+
+[tool.poetry.extras]
+markdown = ["markdown"]
+
+[tool.autopub]
+project-name = "Image Process"
+git-username = "botpub"
+git-email = "botpub@autopub.rocks"
+
+[tool.isort]
+# Maintain compatibility with Black
+combine_as_imports = true
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 88
+multi_line_output = 3
+
+# Sort imports within their section independent of the import type
+force_sort_within_sections = true
+
+# Designate "pelican" as separate import section
+known_pelican = "pelican"
+sections = "FUTURE,STDLIB,THIRDPARTY,PELICAN,FIRSTPARTY,LOCALFOLDER"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

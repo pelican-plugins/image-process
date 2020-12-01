@@ -120,14 +120,8 @@ the `figure` directive:
 You can use *Image Process* to automatically generate a set of
 images that will be selected for display by browsers according to the
 viewport width or according to the device resolution. To accomplish
-this, *Image Process* will add a `srcset` attribute (and maybe a
+this, *Image Process* will add a [`srcset` attribute](https://caniuse.com/srcset) (and maybe a
 `media` and a `sizes` attribute) to the `<img>`.
-
-Note that the `srcset` syntax is currently not supported by all
-browsers. However, browsers who do not support the `srcset`
-attribute will fall back to a default image specified by the
-still-present `src` attribute. See [Can I Use](https://caniuse.com/srcset)
-for the current status on `srcset` support.
 
 HTML5 supports two types of responsive image set. The first one is
 device-pixel-ratio-based, selecting higher resolution images for higher

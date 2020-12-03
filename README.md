@@ -481,9 +481,7 @@ IMAGE_PROCESS_ENCODING = "utf-8"
 
 ## Known Issues
 
-* Pillow, when resizing animated GIF files, does not return an animated file
-* test mostly pass, but not entirely. The tests also fail on Windows due to
-  path separator issues. The test suite remains a work in progress.
+* Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11). 
 
 ## Contributing
 

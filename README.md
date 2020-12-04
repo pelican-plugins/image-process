@@ -13,14 +13,14 @@ and to save you a trip to Gimp or Photoshop each time you include an
 image in your post.
 
 *Image Process* also makes it easy to create responsive images using
-the new HTML5 `srcset` attribute and `<picture>` tag. It does this
+the HTML5 `srcset` attribute and `<picture>` tag. It does this
 by generating multiple derivative images from one or more sources.
 
 *Image Process* will not overwrite your original images.
 
 ## Installation
 
-The easiest way to install *Image Process* is through the use of pip. This
+The easiest way to install *Image Process* is via Pip. This
 will also install the required dependencies automatically.
 
 ```sh
@@ -34,7 +34,7 @@ below) and add the appropriate class to images you want processed.
 
 *Image Process* scans your content for `<img>` tags with special
 classes. It then maps the classes to a set of image processing
-instructions, computes new images and modifies HTML code according to
+instructions, computes new images, and modifies HTML code according to
 the instructions.
 
 ### Define Transformations
@@ -43,7 +43,7 @@ The first step in using this module is to define some image
 transformations in your Pelican configuration file. Transformations
 are defined in the `IMAGE_PROCESS` dictionary, mapping a
 transformation name to a list of operations. There are three kinds of
-transformations: image replacement, responsive image and picture set.
+transformations: image replacement, responsive image, and picture set.
 
 #### Image Replacement
 
@@ -80,11 +80,12 @@ IMAGE_PROCESS = {
 }
 ```
 
-To apply image replacement to the images in your articles, you must
-add them the special class `image-process-<transform>`, in which `<transform>` is the ID of
-the transformation you wish to apply.
+To apply image replacement to the images in your articles, you must add to them
+the special class `image-process-<transform>`, in which `<transform>` is the ID
+of the transformation you wish to apply.
 
-Let's say you have defined the transformation described above. To get your image processed, it needs to have the right CSS class:
+Let's say you have defined the transformation described above. To get your
+image processed, it needs to have the right CSS class:
 
 ```html
 <img class="image-process-article-image" src="/images/pelican.jpg"/>
@@ -109,27 +110,27 @@ the `figure` directive:
     :class: image-process-article-image
 ```
 
-*Warning*:
+⚠️ **Warning:**
 
-   The reStructuredText reader will convert underscores (`_`) to
-   dashes (`-`) in class names. To make sure everything runs
-   smoothly, do not use underscores in your transformation names.
+> The reStructuredText reader will convert underscores (`_`) to
+> dashes (`-`) in class names. To make sure everything runs
+> smoothly, do not use underscores in your transformation names.
 
-#### Responsive Image
+
+#### Responsive Images
 
 You can use *Image Process* to automatically generate a set of
 images that will be selected for display by browsers according to the
 viewport width or according to the device resolution. To accomplish
-this, *Image Process* will add a [`srcset` attribute](https://caniuse.com/srcset) (and maybe a
-`media` and a `sizes` attribute) to the `<img>`.
+this, *Image Process* will add a [`srcset` attribute](https://caniuse.com/srcset)
+(and maybe a `media` and a `sizes` attribute) to the `<img>` tag.
 
-HTML5 supports two types of responsive image set. The first one is
+HTML5 supports two types of responsive image sets. The first one is
 device-pixel-ratio-based, selecting higher resolution images for higher
 resolution devices; the second one is viewport-based, selecting
-images according to the viewport size. If you want to know more about
-HTML5 responsive images, I recommend
-[this article](https://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/)
-for a gentle introduction to the `srcset` and `<picture>` syntaxes.
+images according to the viewport size. You can read more about
+[HTML5 responsive images][] for a gentle introduction to the `srcset`
+and `<picture>` syntaxes.
 
 To tell *Image Process* to generate a responsive image, add a
 `responsive-image` transformation to your your `IMAGE_PROCESS`
@@ -166,12 +167,12 @@ IMAGE_PROCESS = {
 
 The `crisp` transformation is an example of a transformation
 enabling device-pixel-ratio-based selection. The `srcset` is a list
-of tuple, each tuple containing the image description (`"1x"`,
+of tuples, each tuple containing the image description (`"1x"`,
 `"2x"`, etc.) and the list of operations to generate the derivative
 image from the original image (the original image is the value of the
 `src` attribute of the `<img>`). Image descriptions are hints
 about the resolution of the associated image and must have the suffix
-`x`. The `default` names the image to use to replace the `src`
+`x`. The `default` setting specifies the image to use to replace the `src`
 attribute of the image.  This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
@@ -185,21 +186,21 @@ etc.) and the list of operations to generate the derivative image from
 the original image (the original image is the value of the `src`
 attribute of the `<img>`). Image descriptions are hints about the
 width in pixels of the associated image and must have the suffix
-`w`. The `default` names the image to use to replace the `src`
+`w`. The `default` setting specifies the image to use to replace the `src`
 attribute of the image.  This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
-In the two examples above, the `default` is a string referring to
+In the two examples above, the `default` setting is a string referring to
 one of the images in the `srcset`. However, the `default` value
 could also be a list of operations to generate a different derivative
 image.
 
-To make the images in your article responsive, you must add them the
+To make the images in your article responsive, you must add to them the
 special class `image-process-<transform>`, in which `<transform>` is the ID of the
-transformation you wish to apply. Exactly like you would do for the
+transformation you wish to apply, exactly like you would do for the
 image replacement case, described above.
 
-So, in HTML it should looks like this:
+So, in HTML it should look like this:
 
 ```html
 <img class="image-process-large-photo" src="/images/pelican.jpg"/>
@@ -226,13 +227,11 @@ the `figure` directive:
 
 #### Picture Set
 
-*Image Process* can be use to generate the images used by a
+*Image Process* can be used to generate the images used by a
 `<picture>` tag. The `<picture>` syntax allows for more
-flexibility in providing a choice of image to the browser. Again, if
-you want to know more about HTML5 responsive images, see [this
-article](http://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/)
-for a gentle introduction to the `srcset` and
-`<picture>` syntaxes.
+flexibility in providing a choice of image to the browser.
+Again, you can read more about [HTML5 responsive images][] for a
+gentle introduction to the `srcset` and `<picture>` syntaxes.
 
 To tell *Image Process* to generate the images for a `<picture>`,
 add a `picture` entry to your `IMAGE_PROCESS` dictionary with the
@@ -266,17 +265,16 @@ IMAGE_PROCESS = {
 }
 ```
 
-Each of the `sources` entry is very similar to the `responsive
+Each of the `sources` entries is very similar to the `responsive
 image` describe above. Here, each source must have a `name`, which
 will be used to find the URL of the original image for this source in
 your article. The source may also have a `media`, which contains a
 rule used by the browser to select the active source. The `default`
-names the image to use to replace the `src` attribute of the
-`<img>` inside the `<picture>`.  This is the image that will be
+setting specifies the image to use to replace the `src` attribute of
+the `<img>` inside the `<picture>`.  This is the image that will be
 displayed by browsers that do not support the `<picture>` syntax. In
-this example, it will use the image `640w` from the source
-`default`. A list of operations could have been specified instead of
-`640w`.
+this example, it will use the image `640w` from the source `default`.
+A list of operations could have been specified instead of `640w`.
 
 To generate a responsive `<picture>` for the images in your
 articles, you must add to your article a pseudo `<picture>` tag that
@@ -296,17 +294,15 @@ you wish to apply. The file referenced by the `src` attribute of the
 `<img>` will be used as the special `default` source in your
 transformation definition.
 
-You can't produce this with pure Markdown and have to resort to raw HTML.
+You can't produce this with pure Markdown and must instead resort to raw HTML.
 
-In reStructuredText, however, you
-can also use the `figure` directive to generate a `<picture>`. The
-figure image file will be used as the special `default` source;
-other sources must be added in the the legend section of the
-`figure` as `image` directives. The figure class must be
-`image-process-` followed by the name of the transformation you wish
-to apply, while the other images must have two classes:
-`image-process` and the name of the source they provide an image
-for:
+In reStructuredText, however, you can also use the `figure` directive
+to generate a `<picture>`. The figure image file will be used as the
+special `default` source; other sources must be added in the legend
+section of the `figure` as `image` directives. The figure class must
+be `image-process-` followed by the name of the transformation you
+wish to apply, while the other images must have two classes:
+`image-process` and the name of the source they provide an image for:
 
 ```rst
 .. figure:: /images/pelican.jpg
@@ -432,14 +428,13 @@ IMAGE_PROCESS = {
 By default, the new images will be stored in a directory named
 `derivative/<TRANSFORMATION_NAME>` in the output folder at
 the same location as the original image.
-For example if the original image is located in
-the `content/images` folder. The computed images will be stored
-in the `output/images/derivative/<TRANSFORMATION_NAME>`.
+For example, if the original image is located in
+the `content/images` folder, the computed images will be stored
+in `output/images/derivative/<TRANSFORMATION_NAME>`.
 All the transformations are done in the output directory in order
 to avoid confusion with the source files or if we test multiple
-transformations.
-You can replace `derivative` by something else using the
-`IMAGE_PROCESS_DIR` setting in your Pelican configuration file:
+transformations. You can replace `derivative` by something else using
+the `IMAGE_PROCESS_DIR` setting in your Pelican settings file:
 
 ```python
 IMAGE_PROCESS_DIR = "derivees"
@@ -448,10 +443,9 @@ IMAGE_PROCESS_DIR = "derivees"
 #### Force Image Processing
 
 If the transformed image already exists and is newer than the original
-image, the plugin assumes that it should not recompute it again. You
-can force the plugin to recompute all images by setting
-`IMAGE_PROCESS_FORCE` to `True` in your Pelican configuration
-file.
+image, the plugin assumes that it should not re-compute it again. You
+can force the plugin to re-compute all images by setting
+`IMAGE_PROCESS_FORCE` to `True` in your Pelican configuration file.
 
 ```python
 IMAGE_PROCESS_FORCE = True
@@ -459,16 +453,15 @@ IMAGE_PROCESS_FORCE = True
 
 #### Selecting a HTML Parser
 
-You may select the HTML parser which is used. The default is the builtin
+You may select the HTML parser which is used. The default is the built-in
 `html.parser` but you may also select `html5lib` or `lxml` by setting
-`IMAGE_PROCESS_PARSER` in your pelican configuration file , e.g.:
+`IMAGE_PROCESS_PARSER` in your Pelican settings file. For example:
 
 ```python
 IMAGE_PROCESS_PARSER = "html5lib"
 ```
 
-For details, refer to the [BeautifulSoup documentation on
-parsers](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser).
+For details, refer to the [BeautifulSoup documentation on parsers][].
 
 #### File Encoding
 
@@ -481,7 +474,7 @@ IMAGE_PROCESS_ENCODING = "utf-8"
 
 ## Known Issues
 
-* Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11). 
+* Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11).
 
 ## Contributing
 
@@ -497,3 +490,7 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 This project is licensed under the [AGPL-3.0 license](http://www.gnu.org/licenses/agpl-3.0.html).
 
 [Pelican image](https://web.archive.org/web/20090505115626/http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726) in test data by Jon Sullivan. Published under a [Creative Commons Public Domain license](https://creativecommons.org/licenses/publicdomain/).
+
+
+[HTML5 responsive images]: https://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
+[BeautifulSoup documentation on parsers]: https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser

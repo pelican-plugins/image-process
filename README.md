@@ -472,6 +472,15 @@ opens your files. The default is `utf-8`.
 IMAGE_PROCESS_ENCODING = "utf-8"
 ```
 
+#### Copying EXIF tags
+
+You may ask `image_process` to copy the EXIF tags from your original image to
+the transformed images. You must have [exiftool](https://exiftool.org/) installed.
+
+```python
+IMAGE_PROCESS_COPY_EXIF_TAGS = True
+```
+
 ## Known Issues
 
 * Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11).

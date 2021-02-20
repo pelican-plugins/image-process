@@ -4,7 +4,7 @@ Image Process
 
 This plugin process images according to their class attribute.
 """
-
+import codecs
 import collections
 import copy
 import functools
@@ -13,6 +13,8 @@ import logging
 import os.path
 import posixpath
 import re
+import subprocess
+import sys
 
 from PIL import Image, ImageFilter
 from bs4 import BeautifulSoup
@@ -28,6 +30,56 @@ IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
 
 Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filename"])
+
+
+# A lot of inspiration from pyexiftool (https://github.com/smarnach/pyexiftool)
+class ExifTool(object):
+    errors = "strict"
+    sentinel = b"{ready}"
+    block_size = 4096
+
+    instance = None
+
+    @staticmethod
+    def copy_tags(src, dst):
+        if ExifTool.instance is not None:
+            ExifTool.instance._copy_tags(src, dst)
+
+    def __init__(self):
+        self.encoding = sys.getfilesystemencoding()
+        if self.encoding != "mbcs":
+            try:
+                codecs.lookup_error("surrogateescape")
+            except LookupError:
+                pass
+            else:
+                errors = "surrogateescape"
+
+        with open(os.devnull, "w") as devnull:
+            self.process = subprocess.Popen(
+                ["exiftool", "-stay_open", "True", "-@", "-", "-common_args", "-G", "-n"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=devnull)
+
+    def __del__(self):
+        if self.process is not None:
+            self.process.terminate()
+
+    def _copy_tags(self, src, dst):
+        params = (b"-TagsFromFile", src.encode(self.encoding, ExifTool.errors),
+                  b"\"-all:all>all:all\"", dst.encode(self.encoding, ExifTool.errors))
+        self._send_command(params)
+        params = (b"-delete_original!", dst.encode(self.encoding, ExifTool.errors))
+        self._send_command(params)
+
+    def _send_command(self, params):
+        self.process.stdin.write(b"\n".join(params + (b"-j\n", b"-execute\n")))
+        self.process.stdin.flush()
+        output = b""
+        fd = self.process.stdout.fileno()
+        while not output.strip().endswith(ExifTool.sentinel):
+            output += os.read(fd, ExifTool.block_size)
+        exiftool_result = output.strip()[:-len(ExifTool.sentinel)]
+        log.debug("image_process: exiftool result: {}".format(exiftool_result.decode("utf-8")))
 
 
 def convert_box(image, top, left, right, bottom):
@@ -185,6 +237,10 @@ def harvest_images(path, context):
     if "IMAGE_PROCESS_ENCODING" not in context:
         context["IMAGE_PROCESS_ENCODING"] = "utf-8"
 
+    # Set default value for 'IMAGE_PROCESS_COPY_EXIF_TAGS'
+    if "IMAGE_PROCESS_COPY_EXIF_TAGS" not in context:
+        context["IMAGE_PROCESS_COPY_EXIF_TAGS"] = False
+
     with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
@@ -200,6 +256,10 @@ def harvest_feed_images(path, context, feed):
     # Set default value for 'IMAGE_PROCESS_ENCODING'
     if "IMAGE_PROCESS_ENCODING" not in context:
         context["IMAGE_PROCESS_ENCODING"] = "utf-8"
+
+    # Set default value for 'IMAGE_PROCESS_COPY_EXIF_TAGS'
+    if "IMAGE_PROCESS_COPY_EXIF_TAGS" not in context:
+        context["IMAGE_PROCESS_COPY_EXIF_TAGS"] = False
 
     with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
         soup = BeautifulSoup(f, "xml")
@@ -219,6 +279,10 @@ def harvest_feed_images(path, context, feed):
 def harvest_images_in_fragment(fragment, settings):
     parser = settings.get("IMAGE_PROCESS_PARSER", "html.parser")
     soup = BeautifulSoup(fragment, parser)
+
+    copy_exif_tags = settings.get("IMAGE_PROCESS_COPY_EXIF_TAGS", False)
+    if copy_exif_tags:
+        ExifTool.instance = ExifTool()
 
     for img in soup.find_all("img", class_=IMAGE_PROCESS_REGEX):
         for c in img["class"]:
@@ -262,6 +326,7 @@ def harvest_images_in_fragment(fragment, settings):
             elif group.name == "picture":
                 process_picture(soup, img, group, settings, derivative)
 
+    ExifTool.instance = None
     return str(soup)
 
 
@@ -601,6 +666,8 @@ def process_image(image, settings):
         # however, turning it on seems to break PNG support, and doesn't seem
         # to work on GIF's either...
         i.save(image[1], progressive=True)
+
+        ExifTool.copy_tags(image[0], image[1])
 
 
 def register():

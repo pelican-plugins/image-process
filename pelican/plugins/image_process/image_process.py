@@ -647,11 +647,9 @@ def process_image(image, settings):
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced
     # image generation.
-    if (
-        settings["IMAGE_PROCESS_FORCE"]
-        or not os.path.exists(image[1])
-        or os.path.getmtime(image[0]) > os.path.getmtime(image[1])
-    ):
+    if (settings["IMAGE_PROCESS_FORCE"]
+            or not os.path.exists(image[1])
+            or os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
 
         i = Image.open(image[0])
 

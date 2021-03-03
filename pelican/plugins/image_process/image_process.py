@@ -52,21 +52,35 @@ class ExifTool(object):
                 codecs.lookup_error("surrogateescape")
             except LookupError:
                 pass
-            else:
-                errors = "surrogateescape"
 
         with open(os.devnull, "w") as devnull:
             self.process = subprocess.Popen(
-                ["exiftool", "-stay_open", "True", "-@", "-", "-common_args", "-G", "-n"],
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=devnull)
+                [
+                    "exiftool",
+                    "-stay_open",
+                    "True",
+                    "-@",
+                    "-",
+                    "-common_args",
+                    "-G",
+                    "-n",
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=devnull,
+            )
 
     def __del__(self):
         if self.process is not None:
             self.process.terminate()
 
     def _copy_tags(self, src, dst):
-        params = (b"-TagsFromFile", src.encode(self.encoding, ExifTool.errors),
-                  b"\"-all:all>all:all\"", dst.encode(self.encoding, ExifTool.errors))
+        params = (
+            b"-TagsFromFile",
+            src.encode(self.encoding, ExifTool.errors),
+            b'"-all:all>all:all"',
+            dst.encode(self.encoding, ExifTool.errors),
+        )
         self._send_command(params)
         params = (b"-delete_original!", dst.encode(self.encoding, ExifTool.errors))
         self._send_command(params)
@@ -78,8 +92,10 @@ class ExifTool(object):
         fd = self.process.stdout.fileno()
         while not output.strip().endswith(ExifTool.sentinel):
             output += os.read(fd, ExifTool.block_size)
-        exiftool_result = output.strip()[:-len(ExifTool.sentinel)]
-        log.debug("image_process: exiftool result: {}".format(exiftool_result.decode("utf-8")))
+        exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
+        log.debug(
+            "image_process: exiftool result: {}".format(exiftool_result.decode("utf-8"))
+        )
 
 
 def convert_box(image, top, left, right, bottom):
@@ -647,9 +663,11 @@ def process_image(image, settings):
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced
     # image generation.
-    if (settings["IMAGE_PROCESS_FORCE"]
-            or not os.path.exists(image[1])
-            or os.path.getmtime(image[0]) > os.path.getmtime(image[1])):
+    if (
+        settings["IMAGE_PROCESS_FORCE"]
+        or not os.path.exists(image[1])
+        or os.path.getmtime(image[0]) > os.path.getmtime(image[1])
+    ):
 
         i = Image.open(image[0])
 

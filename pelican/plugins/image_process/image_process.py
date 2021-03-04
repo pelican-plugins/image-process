@@ -13,6 +13,7 @@ import logging
 import os.path
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
 
@@ -38,12 +39,26 @@ class ExifTool(object):
     sentinel = b"{ready}"
     block_size = 4096
 
-    instance = None
+    _instance = None
+
+    @staticmethod
+    def start_exiftool():
+        if shutil.which("exiftool") is None:
+            log.warning(
+                "EXIF tags will not be copied because the exiftool program could not "
+                "be found. Please install exiftool and make sure it is in your path."
+            )
+        else:
+            ExifTool._instance = ExifTool()
 
     @staticmethod
     def copy_tags(src, dst):
-        if ExifTool.instance is not None:
-            ExifTool.instance._copy_tags(src, dst)
+        if ExifTool._instance is not None:
+            ExifTool._instance._copy_tags(src, dst)
+
+    @staticmethod
+    def stop_exiftool():
+        ExifTool._instance = None
 
     def __init__(self):
         self.encoding = sys.getfilesystemencoding()
@@ -298,7 +313,7 @@ def harvest_images_in_fragment(fragment, settings):
 
     copy_exif_tags = settings.get("IMAGE_PROCESS_COPY_EXIF_TAGS", False)
     if copy_exif_tags:
-        ExifTool.instance = ExifTool()
+        ExifTool.start_exiftool()
 
     for img in soup.find_all("img", class_=IMAGE_PROCESS_REGEX):
         for c in img["class"]:
@@ -342,7 +357,7 @@ def harvest_images_in_fragment(fragment, settings):
             elif group.name == "picture":
                 process_picture(soup, img, group, settings, derivative)
 
-    ExifTool.instance = None
+    ExifTool.stop_exiftool()
     return str(soup)
 
 

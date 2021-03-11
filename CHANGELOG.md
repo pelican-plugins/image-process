@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.1.0 - 2021-03-11
+------------------
+
+Add setting to copy EXIF tags from source images to processed images
+
 2.0.0 - 2020-12-04
 ------------------
 

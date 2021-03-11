@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pelican-image-process"
-version = "2.0.0"
+version = "2.1.0"
 description = "Pelican plugin that automates image processing."
 authors = ["Pelican Dev Team <authors@getpelican.com>"]
 license = "AGPL-3.0"

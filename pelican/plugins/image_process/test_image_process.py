@@ -1,16 +1,28 @@
+import json
 import os
 from pathlib import Path
+import shutil
+import subprocess
+import warnings
 
 from PIL import Image, ImageChops
 import pytest
 
-from pelican.plugins.image_process import harvest_images_in_fragment, process_image
+from pelican.plugins.image_process import (
+    ExifTool,
+    harvest_images_in_fragment,
+    process_image,
+)
 
 # Prepare test image constants.
 HERE = Path(__file__).resolve().parent
 TEST_DATA = HERE.joinpath("test_data").resolve()
 TEST_IMAGES = [
     TEST_DATA.joinpath(f"pelican-bird.{ext}").resolve() for ext in ["jpg", "png"]
+]
+EXIF_TEST_IMAGES = [
+    TEST_DATA.joinpath("exif", f"pelican-bird.{ext}").resolve()
+    for ext in ["jpg", "png"]
 ]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
@@ -436,3 +448,98 @@ def test_picture_generation(mocker, orig_tag, new_tag, call_args):
             ),
             settings,
         )
+
+
+def process_image_mock_exif_tool_started(image, settings):
+    assert ExifTool._instance is not None
+
+
+def process_image_mock_exif_tool_not_started(image, settings):
+    assert ExifTool._instance is None
+
+
+@pytest.mark.parametrize("copy_tags", [True, False])
+def test_exiftool_process_is_started_only_when_necessary(mocker, copy_tags):
+    if shutil.which("exiftool") is None:
+        warnings.warn(
+            "EXIF tags copying will not be tested because the exiftool program could "
+            "not be found. Please install exiftool and make sure it is in your path."
+        )
+        return
+
+    if copy_tags:
+        mocker.patch(
+            "pelican.plugins.image_process.image_process.process_image",
+            process_image_mock_exif_tool_started,
+        )
+    else:
+        mocker.patch(
+            "pelican.plugins.image_process.image_process.process_image",
+            process_image_mock_exif_tool_not_started,
+        )
+
+    settings = get_settings(
+        IMAGE_PROCESS_COPY_EXIF_TAGS=copy_tags,
+        IMAGE_PROCESS=COMPLEX_TRANSFORMS,
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    harvest_images_in_fragment(
+        '<img class="image-process-thumb" src="/tmp/test.jpg" />', settings
+    )
+
+
+@pytest.mark.parametrize("image_path", EXIF_TEST_IMAGES)
+@pytest.mark.parametrize("copy_tags", [True, False])
+def test_copy_exif_tags(tmp_path, image_path, copy_tags):
+    if shutil.which("exiftool") is None:
+        warnings.warn(
+            "EXIF tags copying will not be tested because the exiftool program could "
+            "not be found. Please install exiftool and make sure it is in your path."
+        )
+        return
+
+    # A few EXIF tags to test for.
+    exif_tags = [
+        "Artist",
+        "Creator",
+        "Title",
+        "Description",
+        "Subject",
+        "Rating",
+        "ExifImageWidth",
+    ]
+
+    settings = get_settings(IMAGE_PROCESS_COPY_EXIF_TAGS=copy_tags)
+
+    transform_id = "grayscale"
+    transform_params = ["grayscale"]
+    image_name = image_path.name
+    destination_path = tmp_path.joinpath(transform_id, image_name)
+
+    expected_results = subprocess.run(
+        ["exiftool", "-json", image_path], stdout=subprocess.PIPE
+    )
+    expected_tags = json.loads(expected_results.stdout)[0]
+    for tag in exif_tags:
+        assert tag in expected_tags.keys()
+
+    if copy_tags:
+        ExifTool.start_exiftool()
+    process_image((str(image_path), str(destination_path), transform_params), settings)
+    if copy_tags:
+        ExifTool.stop_exiftool()
+
+    actual_results = subprocess.run(
+        ["exiftool", "-json", destination_path], stdout=subprocess.PIPE
+    )
+
+    assert actual_results.returncode == 0
+
+    actual_tags = json.loads(actual_results.stdout)[0]
+    for tag in exif_tags:
+        if copy_tags:
+            assert tag in actual_tags.keys()
+            assert expected_tags[tag] == actual_tags[tag]
+        else:
+            assert tag not in actual_tags.keys()

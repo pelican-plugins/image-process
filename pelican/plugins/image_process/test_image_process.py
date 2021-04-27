@@ -76,7 +76,7 @@ def test_undefined_transform():
 @pytest.mark.parametrize("transform_id, transform_params", SINGLE_TRANSFORMS.items())
 @pytest.mark.parametrize("image_path", TEST_IMAGES)
 def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
-    """ Test the raw transform and their results on images. """
+    """Test the raw transform and their results on images."""
     settings = get_settings()
 
     image_name = image_path.name

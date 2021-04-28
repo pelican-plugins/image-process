@@ -4,56 +4,116 @@ CHANGELOG
 2.1.0 - 2021-03-11
 ------------------
 
-Add setting to copy EXIF tags from source images to processed images
+- **feature**: Add setting to copy EXIF tags from source images to processed
+  images. See [Pull Request
+  #41](https://github.com/pelican-plugins/image-process/pull/41) by
+  [@patrickfournier](https://github.com/patrickfournier).
 
 2.0.0 - 2020-12-04
 ------------------
 
-* Convert to namespace plugin
-* Support `srcset` generation inside Atom feeds
-* Generate progressive JPEGs
+- **feature**: Support `srcset` generation inside Atom feeds. See [Pull Request
+  #29](https://github.com/pelican-plugins/image-process/pull/29) by
+  [@MicroJoe](https://github.com/MicroJoe).
+- **feature**: Generate progressive JPEGs. See [Pull Request
+  #17](https://github.com/pelican-plugins/image-process/pull/17) by
+  [@Lucas-C](https://github.com/Lucas-C).
+- **bug** (Breaking Change): fix `crop` API. See [Pull Request
+  #14](https://github.com/pelican-plugins/image-process/pull/14).
+- **support**: Convert to namespace plugin. The import path of the plugin is
+  now `pelican.plugins.image_process`. See [Pull Request
+  #38](https://github.com/pelican-plugins/image-process/pull/38).
+- **support**: Transfer stewardship of the project to the
+  [Pelican-Plugins](https://github.com/pelican-plugins) organization. The
+  projects code repo is now at
+  <https://github.com/pelican-plugins/image-process>. See [Issue
+  #32](https://github.com/pelican-plugins/image-process/issues/32).
 
 1.3.0 - 2019-10-26
 ------------------
 
 A new release to PyPI intended to replace the Git submodule-based installation,
-while providing the following improvements along with Minchin’s earlier ones:
+while providing the following improvements along with MinchinWeb’s earlier
+ones. The plugin is available at
+[pelican-image-process](https://pypi.org/project/pelican-image-process/). See
+[Issue #13](https://github.com/pelican-plugins/image-process/issues/13).
+
+The project returns to the stewardship of
+[WhiskyEchoBravo](https://github.com/whiskyechobravo/image_process).
+
+[@MinchinWeb](https://github.com/MinchinWeb) did a good job on this project
+while it was not maintained. Thanks!
 
 **The following changelog is from `minchin.pelican.plugins.image_process`:**
 
-[@Minchin](https://github.com/MinchinWeb) did a good job on this project while it was not maintained. Thanks!
+1.2.1 - 2021-04-26
+------------------
 
-- :release:`1.2.0 <2019-08-17>`
-- :bug:`1 major` remove dependency on ``pelican.tests``
-- :feature:`5` add support for Pelican v4
-- :release:`1.1.4 <2018-01-03>`
-- :bug:`4` Fixing a bug when we use ``{attach}`` on an article (thanks
-  `@cunhaax <https://github.com/cunhaax>`_)
-- :bug:`3` fix order of arguments for crop command
-- :bug:`-` ``pep8`` is now ``pycodestyle``
-- :release:`1.1.3 <2017-05-27>`
-- :bug:`2` make code on PyPI match code on Git
-- :release:`1.1.2 <2017-04-10>`
-- :bug:`-` upgrade release toolchain
-- :bug:`-` ``Framework :: Pelican :: Plugins`` trove classifier for PyPI now
+- **support**: Add deprecation notice to point to new plugin location at
+  `pelican-image-process` on PyPI.
+
+1.2.0 - 2019-08-17
+------------------
+
+- **feature**: Add support for Pelican v4. See [Issue
+  #5](https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/5).
+- **bug**: Remove dependency on ``pelican.tests``. See [Issue
+  #1](https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/1).
+
+1.1.4 - 2018-01-03
+------------------
+
+- **bug**: Fixing a bug when we use `{attach}` on an article (thanks
+  [@cunhaax](https://github.com/cunhaax)). See [Pull Request
+  #4](https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/pull/4).
+- **bug**: fix order of arguments for crop command. See [Issue
+  #3](https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/3).
+- **bug**: `pep8` is now `pycodestyle`
+
+1.1.3 - 2017-05-27
+------------------
+
+- **bug**: make code on PyPI match code on Git. See [Issue #2](https://github.com/MinchinWeb/minchin.pelican.plugins.image_process/issues/2).
+
+1.1.2 - 2017-04-10
+------------------
+
+- **bug**:  upgrade release toolchain
+- **bug**:  `Framework :: Pelican :: Plugins` trove classifier for PyPI now
   available
-- :release:`1.1.1 <2017-03-08>`
-- :bug:`-` provide universal wheels
-- :release:`1.1.0 <2016-09-12>`
-- :support:`-` first release to PyPI
-- :support:`-` add release machinery
-- :bug:`- major` deal with undefined ``SITEURL``
-- :feature:`-` allow defination of file encoding (using
+
+1.1.1 - 2017-03-08
+------------------
+
+- **bug**:  provide universal wheels
+
+1.1.0 - 2016-09-12
+------------------
+
+- **feature**: allow definition of file encoding (using
   ``IMAGE_PROCESS_ENCODING`` variable) in Pelican configuration
-- :release:`1.0.2 <2016-08-12>`
-- :support:`-` move package to 'minchin.pelican.plugins.image_process'
-- :support:`-` add 'setup.py'
-- :bug:`-` fix problems dealing with escaped URL's
-- :release:`1.0.1 <2016-06-19>`
-- :bug:`-` merge in open `Pull Request #8
-  <https://github.com/whiskyechobravo/image_process/pull/8>`_ by
-  `Peter Dahlberg <https://github.com/catdog2>`_ by which fixes issues
-  computing image file paths
-- :release:`1.0.0 <2016-06-12>`
-- :support:`-` copy exising code from
-  https://github.com/whiskyechobravo/image_process
+- **bug**: deal with undefined ``SITEURL``
+- **support**: first release to PyPI under
+  [minchin.pelican.plugins.image-process](https://pypi.org/project/minchin.pelican.plugins.image-process/#history).
+- **support**: add release machinery
+
+1.0.2 - 2016-08-12
+------------------
+
+- **bug**: fix problems dealing with escaped URL's
+- **support**: move package to *minchin.pelican.plugins.image_process*
+- **support**: add `setup.py`
+
+1.0.1 - 2016-06-19
+------------------
+
+- **bug**: merge in open [Pull Request
+  #8](https://github.com/whiskyechobravo/image_process/pull/8) by [Peter
+  Dahlberg](https://github.com/catdog2) which fixes issues computing image file
+  paths
+
+1.0.0 - 2016-06-12
+------------------
+
+- **support**: copy existing code from
+  [WhiskyEchoBravo](https://github.com/whiskyechobravo/image_process).

@@ -38,7 +38,7 @@ def black(c, check=False, diff=False):
     if diff:
         diff_flag = "--diff"
 
-    c.run(f"{CMD_PREFIX}black {check_flag} {diff_flag} {PKG_PATH} tasks.py test")
+    c.run(f"{CMD_PREFIX}black {check_flag} {diff_flag} {PKG_PATH} tasks.py")
 
 
 @task
@@ -55,7 +55,7 @@ def isort(c, check=False, diff=False):
 @task
 def flake8(c):
     """Run flake8 against the codebase."""
-    c.run(f"{CMD_PREFIX}flake8 {PKG_PATH} tasks.py test")
+    c.run(f"{CMD_PREFIX}flake8 {PKG_PATH} tasks.py")
 
 
 @task

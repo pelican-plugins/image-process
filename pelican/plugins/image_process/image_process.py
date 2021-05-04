@@ -23,7 +23,8 @@ import six
 from six.moves.urllib_parse import unquote, urlparse
 from six.moves.urllib_request import pathname2url, url2pathname
 
-from pelican import __version__ as pelican_version, signals
+from pelican import __version__ as pelican_version
+from pelican import signals
 
 log = logging.getLogger(__name__)
 

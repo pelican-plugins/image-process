@@ -26,7 +26,8 @@ classifiers = [
 
 [tool.poetry.urls]
 "Funding" = "https://donate.getpelican.com/"
-"Issue Tracker" = "https://github.com/pelican-plugins/image-process/issues"
+"Bug Tracker" = "https://github.com/pelican-plugins/image-process/issues"
+"Changelog" = "https://github.com/pelican-plugins/image-process/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.6"

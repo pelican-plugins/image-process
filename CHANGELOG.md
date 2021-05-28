@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+2.1.2 - 2021-05-28
+------------------
+
+*bug*: Add [lxml](https://lxml.de/) as a project requirement. It is used to
+parse Atom and RSS feeds.
+
 2.1.1 - 2021-05-07
 ------------------
 

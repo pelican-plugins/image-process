@@ -33,9 +33,10 @@ classifiers = [
 python = "^3.6.2 || ^3.7"
 pelican = "^3 || ^4"
 markdown = {version = "^3.2", optional = true}
-beautifulsoup4 = "^4.9.3"
+beautifulsoup4 = "^4.9"
 six = "^1.15.0"
-Pillow = "^8.0.1"
+Pillow = "^8.0"
+lxml = "^4.6"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.4b2", allow-prereleases = true}

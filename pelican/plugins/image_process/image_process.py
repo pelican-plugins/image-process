@@ -46,8 +46,9 @@ class ExifTool(object):
     def start_exiftool():
         if shutil.which("exiftool") is None:
             log.warning(
-                "[image_process] EXIF tags will not be copied because the exiftool program "
-                "could not be found. Please install exiftool and make sure it is in your path."
+                "[image_process] EXIF tags will not be copied because "
+                "the exiftool program could not be found. "
+                "Please install exiftool and make sure it is in your path."
             )
         else:
             ExifTool._instance = ExifTool()

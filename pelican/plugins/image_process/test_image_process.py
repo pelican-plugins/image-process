@@ -10,6 +10,7 @@ import pytest
 
 from pelican.plugins.image_process import (
     ExifTool,
+    compute_paths,
     harvest_images_in_fragment,
     is_img_identifiable,
     process_image,
@@ -563,4 +564,10 @@ def test_is_img_identifiable():
 
     assert not is_img_identifiable("image/that/does/not/exist.png")
 
+    assert not is_img_identifiable(TEST_DATA.joinpath("folded_puzzle.png"))
     assert not is_img_identifiable(TEST_DATA.joinpath("minimal.svg"))
+
+    img = {"src": "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"}
+    settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
+    path = compute_paths(img, settings, derivative="thumb")
+    assert not is_img_identifiable(path.source)

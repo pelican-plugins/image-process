@@ -118,7 +118,10 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
 )
 def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
     # Allow non-existing images to be processed:
-    mocker.patch("pelican.plugins.image_process.image_process.is_img_identifiable", lambda img_filepath: True)
+    mocker.patch(
+        "pelican.plugins.image_process.image_process.is_img_identifiable",
+        lambda img_filepath: True,
+    )
     # Silence image transforms.
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
@@ -436,7 +439,10 @@ COMPLEX_TRANSFORMS = {
 )
 def test_picture_generation(mocker, orig_tag, new_tag, call_args):
     # Allow non-existing images to be processed:
-    mocker.patch("pelican.plugins.image_process.image_process.is_img_identifiable", lambda img_filepath: True)
+    mocker.patch(
+        "pelican.plugins.image_process.image_process.is_img_identifiable",
+        lambda img_filepath: True,
+    )
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(

@@ -110,7 +110,9 @@ class ExifTool(object):
             output += os.read(fd, ExifTool.block_size)
         exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
         log.debug(
-            "[image_process] exiftool result: {}".format(exiftool_result.decode("utf-8"))
+            "[image_process] exiftool result: {}".format(
+                exiftool_result.decode("utf-8")
+            )
         )
 
 
@@ -413,7 +415,10 @@ def compute_paths(img, settings, derivative):
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        log.warn("[image_process] Skipping image %s that could not be identified by Pillow", path.source)
+        log.warn(
+            "[image_process] Skipping image %s that could not be identified by Pillow",
+            path.source,
+        )
         return
     process = settings["IMAGE_PROCESS"][derivative]
 
@@ -437,7 +442,10 @@ def is_img_identifiable(img_filepath):
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        log.warn("[image_process] Skipping image %s that could not be identified by Pillow", path.source)
+        log.warn(
+            "[image_process] Skipping image %s that could not be identified by Pillow",
+            path.source,
+        )
         return
     process = settings["IMAGE_PROCESS"][derivative]
 

@@ -262,7 +262,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
-    log.debug("[image_process] process_images: harvest %r", path)
+    log.debug("[image_process] harvesting %r", path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"

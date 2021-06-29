@@ -11,6 +11,7 @@ import pytest
 from pelican.plugins.image_process import (
     ExifTool,
     harvest_images_in_fragment,
+    is_img_identifiable,
     process_image,
 )
 
@@ -87,6 +88,7 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
 
     transformed = Image.open(destination_path)
     expected = Image.open(expected_path)
+    # Image.getbbox() returns None if there are only black pixels in the image:
     image_diff = ImageChops.difference(transformed, expected).getbbox()
     assert image_diff is None
 
@@ -115,6 +117,8 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     ],
 )
 def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
+    # Allow non-existing images to be processed:
+    mocker.patch("pelican.plugins.image_process.image_process.is_img_identifiable", lambda img_filepath: True)
     # Silence image transforms.
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
@@ -431,6 +435,8 @@ COMPLEX_TRANSFORMS = {
     ],
 )
 def test_picture_generation(mocker, orig_tag, new_tag, call_args):
+    # Allow non-existing images to be processed:
+    mocker.patch("pelican.plugins.image_process.image_process.is_img_identifiable", lambda img_filepath: True)
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(
@@ -543,3 +549,12 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
             assert expected_tags[tag] == actual_tags[tag]
         else:
             assert tag not in actual_tags.keys()
+
+
+def test_is_img_identifiable():
+    for test_image in TEST_IMAGES:
+        assert is_img_identifiable(test_image)
+
+    assert not is_img_identifiable("image/that/does/not/exist.png")
+
+    assert not is_img_identifiable(TEST_DATA.joinpath("minimal.svg"))

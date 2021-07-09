@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+2.1.3 - 2021-07-09
+------------------
+
+*bug*: handling edge cases where image is location is non-local to the Pelican site source,
+does not exist, or cannot be identified by Pillow.
+
+Contributed by [Lucas Cimon](https://github.com/Lucas-C) [PR #51](https://github.com/pelican-plugins/image-process/pull/51/)
+
+
 2.1.2 - 2021-05-28
 ------------------
 

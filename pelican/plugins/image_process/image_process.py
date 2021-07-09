@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import sys
 
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, UnidentifiedImageError
 from bs4 import BeautifulSoup
 import six
 from six.moves.urllib_parse import unquote, urlparse
@@ -46,8 +46,9 @@ class ExifTool(object):
     def start_exiftool():
         if shutil.which("exiftool") is None:
             log.warning(
-                "EXIF tags will not be copied because the exiftool program could not "
-                "be found. Please install exiftool and make sure it is in your path."
+                "[image_process] EXIF tags will not be copied because "
+                "the exiftool program could not be found. "
+                "Please install exiftool and make sure it is in your path."
             )
         else:
             ExifTool._instance = ExifTool()
@@ -110,7 +111,9 @@ class ExifTool(object):
             output += os.read(fd, ExifTool.block_size)
         exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
         log.debug(
-            "image_process: exiftool result: {}".format(exiftool_result.decode("utf-8"))
+            "[image_process] exiftool result: {}".format(
+                exiftool_result.decode("utf-8")
+            )
         )
 
 
@@ -260,7 +263,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
-    log.debug("process_images: harvest %r", path)
+    log.debug("[image_process] harvesting %r", path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -412,6 +415,12 @@ def compute_paths(img, settings, derivative):
 
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
+    if not is_img_identifiable(path.source):
+        log.warn(
+            "[image_process] Skipping image %s that could not be identified by Pillow",
+            path.source,
+        )
+        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
@@ -423,8 +432,22 @@ def process_img_tag(img, settings, derivative):
     process_image((path.source, destination, process), settings)
 
 
+def is_img_identifiable(img_filepath):
+    try:
+        Image.open(img_filepath)
+        return True
+    except (FileNotFoundError, UnidentifiedImageError):
+        return False
+
+
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
+    if not is_img_identifiable(path.source):
+        log.warn(
+            "[image_process] Skipping image %s that could not be identified by Pillow",
+            path.source,
+        )
+        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     default = process["default"]
@@ -432,7 +455,7 @@ def build_srcset(img, settings, derivative):
         breakpoints = {i for i, _ in process["srcset"]}
         if default not in breakpoints:
             log.error(
-                'image_process: srcset "%s" does not define default "%s"',
+                '[image_process] srcset "%s" does not define default "%s"',
                 derivative,
                 default,
             )
@@ -672,7 +695,7 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    log.debug("image_process: {} -> {}".format(image[0], image[1]))
+    log.debug("[image_process] {} -> {}".format(image[0], image[1]))
 
     os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 

@@ -29,7 +29,6 @@ from pelican import signals
 log = logging.getLogger(__name__)
 
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
-PELICAN_MAJOR_VERSION = int(pelican_version.split(".")[0])
 
 Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filename"])
 
@@ -376,7 +375,7 @@ def compute_paths(img, settings, derivative):
         posixpath.dirname(img["src"]), pathname2url(derivative_path)
     )
 
-    if PELICAN_MAJOR_VERSION < 4:
+    if pelican_version != "unknown" and int(pelican_version.split(".")[0]) < 4:
         file_paths = settings["filenames"]
     else:
         file_paths = settings["static_content"]

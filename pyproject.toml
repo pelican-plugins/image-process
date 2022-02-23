@@ -39,7 +39,7 @@ Pillow = "^9.0"
 lxml = "^4.6"
 
 [tool.poetry.dev-dependencies]
-black = {version = "^21.4b2", allow-prereleases = true}
+black = "^22"
 flake8 = "^3.8"
 flake8-black = "^0.2.0"
 invoke = "^1.3"

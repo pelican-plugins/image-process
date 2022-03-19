@@ -494,6 +494,17 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 [existing issues]: https://github.com/pelican-plugins/image-process/issues
 [Contributing to Pelican]: https://docs.getpelican.com/en/latest/contribute.html
 
+### Regenerating Test Images
+
+If you need to regenerate the transformed images used by the test suite, there
+is a helper function to do this for you. From the Python REPL:
+
+```pycon
+>>> from pelican.plugins.image_process.test_image_process import generate_test_images
+>>> generate_test_images()
+36 test images generated!
+```
+
 ## License
 
 This project is licensed under the [AGPL-3.0 license](http://www.gnu.org/licenses/agpl-3.0.html).

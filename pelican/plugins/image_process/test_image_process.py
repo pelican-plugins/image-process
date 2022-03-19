@@ -571,3 +571,21 @@ def test_is_img_identifiable():
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
     path = compute_paths(img, settings, derivative="thumb")
     assert not is_img_identifiable(path.source)
+
+
+def generate_test_images():
+    settings = get_settings()
+    image_count = 0
+    for image_path in TEST_IMAGES:
+        for transform_id, transform_params in SINGLE_TRANSFORMS.items():
+            process_image(
+                (
+                    str(image_path),
+                    str(TRANSFORM_RESULTS.joinpath(transform_id, image_path.name)),
+                    transform_params,
+                ),
+                settings,
+            )
+            image_count += 1
+
+    print(f"{image_count} test images generated!")

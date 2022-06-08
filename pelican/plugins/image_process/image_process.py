@@ -258,6 +258,7 @@ basic_ops = {
     "smooth": functools.partial(apply_filter, f=ImageFilter.SMOOTH),
     "smooth_more": functools.partial(apply_filter, f=ImageFilter.SMOOTH_MORE),
     "sharpen": functools.partial(apply_filter, f=ImageFilter.SHARPEN),
+    "link_original": lambda i: i,  # Handled in harvest_images_in_fragment() instead
 }
 
 
@@ -319,6 +320,8 @@ def harvest_images_in_fragment(fragment, settings):
         ExifTool.start_exiftool()
 
     for img in soup.find_all("img", class_=IMAGE_PROCESS_REGEX):
+        orig_src = img["src"]
+
         for c in img["class"]:
             if c.startswith("image-process-"):
                 derivative = c[14:]
@@ -359,6 +362,13 @@ def harvest_images_in_fragment(fragment, settings):
                 convert_div_to_picture_tag(soup, img, group, settings, derivative)
             elif group.name == "picture":
                 process_picture(soup, img, group, settings, derivative)
+
+            if d.get("link_original", False):
+                raise RuntimeError("link_original is not supported for picture tags")
+
+        if "link_original" in d and (isinstance(d, list) or d["link_original"]):
+            link_tag = soup.new_tag("a", href=orig_src)
+            img.wrap(link_tag)
 
     ExifTool.stop_exiftool()
     return str(soup)

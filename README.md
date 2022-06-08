@@ -421,6 +421,34 @@ IMAGE_PROCESS = {
 }
 ```
 
+### Linking The Original Image
+
+To wrap the new `<img>` tag in a `<a>` that links to the original image file, add `link_original`. For plain images, add `link_original` directly in the list of image transformations. For example:
+
+```python
+IMAGE_PROCESS = {
+    "thumb": [ "scale_in 80 80 True", "link_original" ],
+}
+```
+
+For `response-image`, add `link_original` as a "truthy" value in the dictionary. For example:
+
+``` python
+IMAGE_PROCESS = {
+    "article-image": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 500 500 False"]),
+            ("2x", ["scale_in 1000 1000 False"]),
+        ],
+        "default": "1x",
+        "link_original": True,
+    },
+}
+```
+
+For `<picture>` tags, `link_original` is not currently supported.
+
 ### Additional Settings
 
 #### Destination Directory

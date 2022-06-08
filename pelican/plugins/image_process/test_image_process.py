@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import warnings
@@ -571,6 +572,52 @@ def test_is_img_identifiable():
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
     path = compute_paths(img, settings, derivative="thumb")
     assert not is_img_identifiable(path.source)
+
+
+@pytest.mark.parametrize(
+    "orig_tag, new_tag, process",
+    [
+        (
+            '<img class="image-process-thumb" src="/tmp/test.jpg" />',
+            '<a href="/tmp/test.jpg">'
+            '<img class="image-process-thumb" src="/tmp/derivs/thumb/test.jpg"/>'
+            "</a>",
+            {"thumb": ["scale_in 150 150", "link_original"]},
+        ),
+        (
+            '<img class="image-process-resp" src="/tmp/test.jpg" />',
+            '<a href="/tmp/test.jpg">'
+            '<img class="image-process-resp" src="/tmp/derivs/resp/1x/test.jpg" '
+            'srcset="/tmp/derivs/resp/1x/test.jpg 1x, '
+            '/tmp/derivs/resp/2x/test.jpg 2x"/>'
+            "</a>",
+            {
+                "resp": {
+                    "type": "responsive-image",
+                    "srcset": [
+                        ("1x", ["scale_in 400"]),
+                        ("2x", ["scale_in 800"]),
+                    ],
+                    "default": "1x",
+                    "link_original": True,
+                },
+            },
+        ),
+    ],
+)
+def test_link_original(mocker, orig_tag, new_tag, process):
+    # Allow non-existing images to be processed:
+    mocker.patch(
+        "pelican.plugins.image_process.image_process.is_img_identifiable",
+        lambda img_filepath: True,
+    )
+    mocker.patch("pelican.plugins.image_process.image_process.process_image")
+
+    settings = get_settings(IMAGE_PROCESS=process, IMAGE_PROCESS_DIR="derivs")
+
+    new_tag = re.sub(r" *\n *", "", new_tag)  # strip newlines and indents
+
+    assert harvest_images_in_fragment(orig_tag, settings) == new_tag
 
 
 def generate_test_images():

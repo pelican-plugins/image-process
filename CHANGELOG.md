@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+3.0.0 - 2022-07-10
+------------------
+
+*support*: Drops support for Python 3.6.
+
+*support*: upgrade Pillow to 9.0.0 (which doesn't support Python 3.6)
+
+*support*: regenerate test images to match new output from Pillow 9
+
 2.1.3 - 2021-07-09
 ------------------
 

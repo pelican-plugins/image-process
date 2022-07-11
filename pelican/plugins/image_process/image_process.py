@@ -169,7 +169,7 @@ def resize(i, w, h):
     elif i.mode == "1":
         i = i.convert("L")
 
-    return i.resize((int(w), int(h)), Image.LANCZOS)
+    return i.resize((int(w), int(h)), Image.Resampling.LANCZOS)
 
 
 def scale(i, w, h, upscale, inside):
@@ -215,7 +215,7 @@ def scale(i, w, h, upscale, inside):
     elif i.mode == "1":
         i = i.convert("L")
 
-    return i.resize((int(scale * iw), int(scale * ih)), Image.LANCZOS)
+    return i.resize((int(scale * iw), int(scale * ih)), Image.Resampling.LANCZOS)
 
 
 def rotate(i, degrees):
@@ -225,7 +225,7 @@ def rotate(i, degrees):
         i = i.convert("L")
 
     # rotate does not support the LANCZOS filter (Pillow 2.7.0).
-    return i.rotate(int(degrees), Image.BICUBIC, True)
+    return i.rotate(int(degrees), Image.Resampling.BICUBIC, True)
 
 
 def apply_filter(i, f):
@@ -239,8 +239,8 @@ def apply_filter(i, f):
 
 basic_ops = {
     "crop": crop,
-    "flip_horizontal": lambda i: i.transpose(Image.FLIP_LEFT_RIGHT),
-    "flip_vertical": lambda i: i.transpose(Image.FLIP_TOP_BOTTOM),
+    "flip_horizontal": lambda i: i.transpose(Image.Transpose.FLIP_LEFT_RIGHT),
+    "flip_vertical": lambda i: i.transpose(Image.Transpose.FLIP_TOP_BOTTOM),
     "grayscale": lambda i: i.convert("L"),
     "resize": resize,
     "rotate": rotate,

@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.0.1 - 2022-07-11
+------------------
+
+*bug*: Fix function calls to be deprecated by Pillow 10.
+
 3.0.0 - 2022-07-10
 ------------------
 

@@ -26,7 +26,7 @@ from six.moves.urllib_request import pathname2url, url2pathname
 from pelican import __version__ as pelican_version
 from pelican import signals
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 LOG_PREFIX = "[image_process]"
 
@@ -46,7 +46,7 @@ class ExifTool(object):
     @staticmethod
     def start_exiftool():
         if shutil.which("exiftool") is None:
-            log.warning(
+            logger.warning(
                 "%s EXIF tags will not be copied because the exiftool program "
                 "could not be found.  Please install exiftool and make sure it "
                 "is in your path." % LOG_PREFIX
@@ -111,7 +111,7 @@ class ExifTool(object):
         while not output.strip().endswith(ExifTool.sentinel):
             output += os.read(fd, ExifTool.block_size)
         exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
-        log.debug(
+        logger.debug(
             "{} exiftool result: {}".format(LOG_PREFIX, exiftool_result.decode("utf-8"))
         )
 
@@ -262,7 +262,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
-    log.debug("%s harvesting %r", LOG_PREFIX, path)
+    logger.debug("%s harvesting %r", LOG_PREFIX, path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -415,7 +415,7 @@ def compute_paths(img, settings, derivative):
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        log.warn(
+        logger.warn(
             "%s Skipping image %s that could not be identified by Pillow",
             LOG_PREFIX,
             path.source,
@@ -443,7 +443,7 @@ def is_img_identifiable(img_filepath):
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        log.warn(
+        logger.warn(
             "%s Skipping image %s that could not be identified by Pillow",
             LOG_PREFIX,
             path.source,
@@ -455,7 +455,7 @@ def build_srcset(img, settings, derivative):
     if isinstance(default, six.string_types):
         breakpoints = {i for i, _ in process["srcset"]}
         if default not in breakpoints:
-            log.error(
+            logger.error(
                 '%s srcset "%s" does not define default "%s"',
                 LOG_PREFIX,
                 derivative,
@@ -697,7 +697,7 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    log.debug("{} {} -> {}".format(LOG_PREFIX, image[0], image[1]))
+    logger.debug("{} {} -> {}".format(LOG_PREFIX, image[0], image[1]))
 
     os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 

@@ -28,6 +28,8 @@ from pelican import signals
 
 log = logging.getLogger(__name__)
 
+LOG_PREFIX = "[image_process]"
+
 IMAGE_PROCESS_REGEX = re.compile("image-process-[-a-zA-Z0-9_]+")
 
 Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filename"])
@@ -45,9 +47,9 @@ class ExifTool(object):
     def start_exiftool():
         if shutil.which("exiftool") is None:
             log.warning(
-                "[image_process] EXIF tags will not be copied because "
-                "the exiftool program could not be found. "
-                "Please install exiftool and make sure it is in your path."
+                "%s EXIF tags will not be copied because the exiftool program "
+                "could not be found.  Please install exiftool and make sure it "
+                "is in your path." % LOG_PREFIX
             )
         else:
             ExifTool._instance = ExifTool()
@@ -110,9 +112,7 @@ class ExifTool(object):
             output += os.read(fd, ExifTool.block_size)
         exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
         log.debug(
-            "[image_process] exiftool result: {}".format(
-                exiftool_result.decode("utf-8")
-            )
+            "{} exiftool result: {}".format(LOG_PREFIX, exiftool_result.decode("utf-8"))
         )
 
 
@@ -262,7 +262,7 @@ basic_ops = {
 
 
 def harvest_images(path, context):
-    log.debug("[image_process] harvesting %r", path)
+    log.debug("%s harvesting %r", LOG_PREFIX, path)
     # Set default value for 'IMAGE_PROCESS_DIR'.
     if "IMAGE_PROCESS_DIR" not in context:
         context["IMAGE_PROCESS_DIR"] = "derivatives"
@@ -416,7 +416,8 @@ def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
         log.warn(
-            "[image_process] Skipping image %s that could not be identified by Pillow",
+            "%s Skipping image %s that could not be identified by Pillow",
+            LOG_PREFIX,
             path.source,
         )
         return
@@ -443,7 +444,8 @@ def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
         log.warn(
-            "[image_process] Skipping image %s that could not be identified by Pillow",
+            "%s Skipping image %s that could not be identified by Pillow",
+            LOG_PREFIX,
             path.source,
         )
         return
@@ -454,7 +456,8 @@ def build_srcset(img, settings, derivative):
         breakpoints = {i for i, _ in process["srcset"]}
         if default not in breakpoints:
             log.error(
-                '[image_process] srcset "%s" does not define default "%s"',
+                '%s srcset "%s" does not define default "%s"',
+                LOG_PREFIX,
                 derivative,
                 default,
             )
@@ -694,7 +697,7 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    log.debug("[image_process] {} -> {}".format(image[0], image[1]))
+    log.debug("{} {} -> {}".format(LOG_PREFIX, image[0], image[1]))
 
     os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 

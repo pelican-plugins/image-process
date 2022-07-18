@@ -12,6 +12,7 @@ import html
 import logging
 import os.path
 import posixpath
+import pprint
 import re
 import shutil
 import subprocess
@@ -727,6 +728,15 @@ def process_image(image, settings):
         ExifTool.copy_tags(image[0], image[1])
 
 
+def dump_config(pelican):
+    logger.debug(
+        "{} config:\n{}".format(
+            LOG_PREFIX, pprint.pformat(pelican.settings["IMAGE_PROCESS"])
+        )
+    )
+
+
 def register():
     signals.content_written.connect(harvest_images)
     signals.feed_written.connect(harvest_feed_images)
+    signals.finalized.connect(dump_config)

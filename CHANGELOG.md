@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.0.3 - 2022-07-18
+------------------
+
+*support*: Display plugin configuration when Pelican is run in debug mode.
+
 3.0.2 - 2022-07-11
 ------------------
 

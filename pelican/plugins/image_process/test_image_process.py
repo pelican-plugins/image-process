@@ -14,6 +14,7 @@ from pelican.plugins.image_process import (
     harvest_images_in_fragment,
     is_img_identifiable,
     process_image,
+    set_default_settings
 )
 
 # Prepare test image constants.
@@ -65,6 +66,7 @@ def get_settings(**kwargs):
     }
     settings = DEFAULT_CONFIG.copy()
     settings.update(kwargs)
+    set_default_settings(settings)
     return settings
 
 

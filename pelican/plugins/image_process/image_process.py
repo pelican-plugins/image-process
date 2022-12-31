@@ -546,7 +546,8 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
             process_image((source, destination, default[1]), settings)
         else:
             raise RuntimeError(
-                'Unexpected type for the second value of tuple IMAGE_PROCESS["%s"]["default"]; expected string or list.',
+                "Unexpected type for the second value of tuple "
+                "IMAGE_PROCESS[\"%s\"][\"default\"]; expected string or list.",
                 (derivative,),
             )
 
@@ -665,7 +666,8 @@ def process_picture(soup, img, group, settings, derivative):
 
         else:
             raise RuntimeError(
-                'Unexpected type for the second value of tuple IMAGE_PROCESS["%s"]["default"]; expected string or list.',
+                "Unexpected type for the second value of tuple "
+                "IMAGE_PROCESS[\"%s\"][\"default\"]; expected string or list.",
                 (derivative,),
             )
 

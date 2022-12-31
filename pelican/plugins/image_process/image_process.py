@@ -261,6 +261,7 @@ basic_ops = {
     "sharpen": functools.partial(apply_filter, f=ImageFilter.SHARPEN),
 }
 
+
 def set_default_settings(settings):
     # Set default value for 'IMAGE_PROCESS'.
     if "IMAGE_PROCESS" not in settings:

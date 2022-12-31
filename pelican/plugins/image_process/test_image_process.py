@@ -13,6 +13,7 @@ from pelican.plugins.image_process import (
     compute_paths,
     harvest_images_in_fragment,
     process_image,
+    set_default_settings,
     try_open_image,
 )
 
@@ -65,6 +66,7 @@ def get_settings(**kwargs):
     }
     settings = DEFAULT_CONFIG.copy()
     settings.update(kwargs)
+    set_default_settings(settings)
     return settings
 
 

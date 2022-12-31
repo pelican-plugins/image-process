@@ -262,20 +262,33 @@ basic_ops = {
 }
 
 
-def harvest_images(path, context):
-    logger.debug("%s harvesting %r", LOG_PREFIX, path)
+def set_default_settings(settings):
+    # Set default value for 'IMAGE_PROCESS'.
+    if "IMAGE_PROCESS" not in settings:
+        logger.warning("{} No processing instructions defined.".format(LOG_PREFIX))
+        settings["IMAGE_PROCESS"] = {}
+
     # Set default value for 'IMAGE_PROCESS_DIR'.
-    if "IMAGE_PROCESS_DIR" not in context:
-        context["IMAGE_PROCESS_DIR"] = "derivatives"
+    if "IMAGE_PROCESS_DIR" not in settings:
+        settings["IMAGE_PROCESS_DIR"] = "derivatives"
 
     # Set default value for 'IMAGE_PROCESS_ENCODING'
-    if "IMAGE_PROCESS_ENCODING" not in context:
-        context["IMAGE_PROCESS_ENCODING"] = "utf-8"
+    if "IMAGE_PROCESS_ENCODING" not in settings:
+        settings["IMAGE_PROCESS_ENCODING"] = "utf-8"
 
     # Set default value for 'IMAGE_PROCESS_COPY_EXIF_TAGS'
-    if "IMAGE_PROCESS_COPY_EXIF_TAGS" not in context:
-        context["IMAGE_PROCESS_COPY_EXIF_TAGS"] = False
+    if "IMAGE_PROCESS_COPY_EXIF_TAGS" not in settings:
+        settings["IMAGE_PROCESS_COPY_EXIF_TAGS"] = False
 
+    # Set default value for 'IMAGE_PROCESS_FORCE'.
+    if "IMAGE_PROCESS_FORCE" not in settings:
+        settings["IMAGE_PROCESS_FORCE"] = False
+
+
+def harvest_images(path, context):
+    set_default_settings(context)
+
+    logger.debug("%s harvesting %r", LOG_PREFIX, path)
     with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
         res = harvest_images_in_fragment(f, context)
         f.seek(0)
@@ -284,23 +297,13 @@ def harvest_images(path, context):
 
 
 def harvest_feed_images(path, context, feed):
-    # Set default value for 'IMAGE_PROCESS_DIR'.
-    if "IMAGE_PROCESS_DIR" not in context:
-        context["IMAGE_PROCESS_DIR"] = "derivatives"
-
-    # Set default value for 'IMAGE_PROCESS_ENCODING'
-    if "IMAGE_PROCESS_ENCODING" not in context:
-        context["IMAGE_PROCESS_ENCODING"] = "utf-8"
-
-    # Set default value for 'IMAGE_PROCESS_COPY_EXIF_TAGS'
-    if "IMAGE_PROCESS_COPY_EXIF_TAGS" not in context:
-        context["IMAGE_PROCESS_COPY_EXIF_TAGS"] = False
+    set_default_settings(context)
 
     with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
         soup = BeautifulSoup(f, "xml")
 
         for content in soup.find_all("content"):
-            if content["type"] != "html":
+            if content["type"] != "html" or not content.string:
                 continue
 
             doc = html.unescape(content.string)
@@ -687,10 +690,6 @@ def try_open_image(path):
 
 
 def process_image(image, settings):
-    # Set default value for 'IMAGE_PROCESS_FORCE'.
-    if "IMAGE_PROCESS_FORCE" not in settings:
-        settings["IMAGE_PROCESS_FORCE"] = False
-
     # remove URL encoding to get to physical filenames
     image = list(image)
     image[0] = unquote(image[0])
@@ -731,6 +730,8 @@ def process_image(image, settings):
 
 
 def dump_config(pelican):
+    set_default_settings(pelican.settings)
+
     logger.debug(
         "{} config:\n{}".format(
             LOG_PREFIX, pprint.pformat(pelican.settings["IMAGE_PROCESS"])

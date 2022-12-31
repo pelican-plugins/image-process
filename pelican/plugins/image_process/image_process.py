@@ -17,11 +17,11 @@ import re
 import shutil
 import subprocess
 import sys
+from urllib.parse import unquote, urlparse
+from urllib.request import pathname2url, url2pathname
 
 from PIL import Image, ImageFilter, UnidentifiedImageError
 from bs4 import BeautifulSoup
-from urllib.parse import unquote, urlparse
-from urllib.request import pathname2url, url2pathname
 
 from pelican import __version__ as pelican_version
 from pelican import signals

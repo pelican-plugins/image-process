@@ -300,7 +300,7 @@ def harvest_feed_images(path, context, feed):
         soup = BeautifulSoup(f, "xml")
 
         for content in soup.find_all("content"):
-            if content["type"] != "html":
+            if content["type"] != "html" or not content.string:
                 continue
 
             doc = html.unescape(content.string)

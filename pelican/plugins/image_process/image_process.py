@@ -667,6 +667,27 @@ def process_picture(soup, img, group, settings, derivative):
             img.insert_before(s["element"])
 
 
+def try_open_image(path):
+    try:
+        i = Image.open(path)
+    except UnidentifiedImageError:
+        logger.warning(
+            "%s Source image %s is not supported by Pillow.",
+            LOG_PREFIX,
+            path,
+        )
+        return None
+    except FileNotFoundError:
+        logger.warning(
+            "%s Source image %s not found.",
+            LOG_PREFIX,
+            path,
+        )
+        return None
+
+    return i
+
+
 def process_image(image, settings):
     # remove URL encoding to get to physical filenames
     image = list(image)
@@ -684,13 +705,8 @@ def process_image(image, settings):
     ):
         logger.debug(f"{LOG_PREFIX} Processing {image[0]} -> {image[1]}")
 
-        try:
-            i = Image.open(image[0])
-        except UnidentifiedImageError:
-            logger.warning(f"{LOG_PREFIX} Source image {image[0]} is not supported by Pillow.")
-            return
-        except FileNotFoundError:
-            logger.warning(f"{LOG_PREFIX} Source image {image[0]} not found.")
+        i = try_open_image(image[0])
+        if i is None:
             return
 
         for step in image[2]:

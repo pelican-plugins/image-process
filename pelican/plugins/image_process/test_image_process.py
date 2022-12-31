@@ -12,8 +12,8 @@ from pelican.plugins.image_process import (
     ExifTool,
     compute_paths,
     harvest_images_in_fragment,
-    is_img_identifiable,
     process_image,
+    try_open_image,
     set_default_settings,
 )
 
@@ -121,11 +121,6 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     ],
 )
 def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
-    # Allow non-existing images to be processed:
-    mocker.patch(
-        "pelican.plugins.image_process.image_process.is_img_identifiable",
-        lambda img_filepath: True,
-    )
     # Silence image transforms.
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
@@ -442,11 +437,6 @@ COMPLEX_TRANSFORMS = {
     ],
 )
 def test_picture_generation(mocker, orig_tag, new_tag, call_args):
-    # Allow non-existing images to be processed:
-    mocker.patch(
-        "pelican.plugins.image_process.image_process.is_img_identifiable",
-        lambda img_filepath: True,
-    )
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(
@@ -563,19 +553,19 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
             assert tag not in actual_tags
 
 
-def test_is_img_identifiable():
+def test_try_open_image():
     for test_image in TEST_IMAGES:
-        assert is_img_identifiable(test_image)
+        assert try_open_image(test_image)
 
-    assert not is_img_identifiable("image/that/does/not/exist.png")
+    assert not try_open_image("image/that/does/not/exist.png")
 
-    assert not is_img_identifiable(TEST_DATA.joinpath("folded_puzzle.png"))
-    assert not is_img_identifiable(TEST_DATA.joinpath("minimal.svg"))
+    assert not try_open_image(TEST_DATA.joinpath("folded_puzzle.png"))
+    assert not try_open_image(TEST_DATA.joinpath("minimal.svg"))
 
     img = {"src": "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"}
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
     path = compute_paths(img, settings, derivative="thumb")
-    assert not is_img_identifiable(path.source)
+    assert not try_open_image(path.source)
 
 
 def generate_test_images():

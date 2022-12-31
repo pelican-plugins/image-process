@@ -14,7 +14,7 @@ from pelican.plugins.image_process import (
     harvest_images_in_fragment,
     is_img_identifiable,
     process_image,
-    set_default_settings
+    set_default_settings,
 )
 
 # Prepare test image constants.

@@ -415,13 +415,6 @@ def compute_paths(img, settings, derivative):
 
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
-    if not is_img_identifiable(path.source):
-        logger.warn(
-            "%s Skipping image %s that could not be identified by Pillow",
-            LOG_PREFIX,
-            path.source,
-        )
-        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
@@ -433,23 +426,8 @@ def process_img_tag(img, settings, derivative):
     process_image((path.source, destination, process), settings)
 
 
-def is_img_identifiable(img_filepath):
-    try:
-        Image.open(img_filepath)
-        return True
-    except (FileNotFoundError, UnidentifiedImageError):
-        return False
-
-
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
-    if not is_img_identifiable(path.source):
-        logger.warn(
-            "%s Skipping image %s that could not be identified by Pillow",
-            LOG_PREFIX,
-            path.source,
-        )
-        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     default = process["default"]
@@ -698,10 +676,6 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    logger.debug("{} {} -> {}".format(LOG_PREFIX, image[0], image[1]))
-
-    os.makedirs(os.path.dirname(image[1]), exist_ok=True)
-
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced
     # image generation.
@@ -710,8 +684,24 @@ def process_image(image, settings):
         or not os.path.exists(image[1])
         or os.path.getmtime(image[0]) > os.path.getmtime(image[1])
     ):
+        logger.debug("{} Processing {} -> {}".format(LOG_PREFIX, image[0], image[1]))
 
-        i = Image.open(image[0])
+        try:
+            i = Image.open(image[0])
+        except UnidentifiedImageError:
+            logger.warning(
+                "%s Source image %s is not supported by Pillow.",
+                LOG_PREFIX,
+                image[0],
+            )
+            return
+        except FileNotFoundError:
+            logger.warning(
+                "%s Source image %s not found.",
+                LOG_PREFIX,
+                image[0],
+            )
+            return
 
         for step in image[2]:
             if hasattr(step, "__call__"):
@@ -720,12 +710,16 @@ def process_image(image, settings):
                 elems = step.split(" ")
                 i = basic_ops[elems[0]](i, *(elems[1:]))
 
+        os.makedirs(os.path.dirname(image[1]), exist_ok=True)
+
         # `save_all=True`  will allow saving multi-page (aka animated) GIF's
         # however, turning it on seems to break PNG support, and doesn't seem
         # to work on GIF's either...
         i.save(image[1], progressive=True)
 
         ExifTool.copy_tags(image[0], image[1])
+    else:
+        logger.debug("{} Skipping {} -> {}".format(LOG_PREFIX, image[0], image[1]))
 
 
 def dump_config(pelican):

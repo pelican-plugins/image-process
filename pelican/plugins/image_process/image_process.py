@@ -446,7 +446,7 @@ def is_img_identifiable(img_filepath):
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        logger.warn(
+        logger.warning(
             "%s Skipping image %s that could not be identified by Pillow",
             LOG_PREFIX,
             path.source,

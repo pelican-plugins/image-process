@@ -17,12 +17,11 @@ import re
 import shutil
 import subprocess
 import sys
+from urllib.parse import unquote, urlparse
+from urllib.request import pathname2url, url2pathname
 
 from PIL import Image, ImageFilter, UnidentifiedImageError
 from bs4 import BeautifulSoup
-import six
-from six.moves.urllib_parse import unquote, urlparse
-from six.moves.urllib_request import pathname2url, url2pathname
 
 from pelican import __version__ as pelican_version
 from pelican import signals
@@ -144,7 +143,7 @@ def convert_box(image, top, left, right, bottom):
     else:
         bottom = float(bottom)
 
-    return (top, left, right, bottom)
+    return top, left, right, bottom
 
 
 def crop(i, left, top, right, bottom):
@@ -342,7 +341,7 @@ def harvest_images_in_fragment(fragment, settings):
         elif not isinstance(d, dict):
             raise RuntimeError(
                 "Derivative %s definition not handled"
-                "(must be list or dict)" % (derivative)
+                "(must be list or dict)" % derivative
             )
 
         elif "type" not in d:
@@ -419,7 +418,7 @@ def compute_paths(img, settings, derivative):
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        logger.warn(
+        logger.warning(
             "%s Skipping image %s that could not be identified by Pillow",
             LOG_PREFIX,
             path.source,
@@ -447,7 +446,7 @@ def is_img_identifiable(img_filepath):
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     if not is_img_identifiable(path.source):
-        logger.warn(
+        logger.warning(
             "%s Skipping image %s that could not be identified by Pillow",
             LOG_PREFIX,
             path.source,
@@ -456,7 +455,8 @@ def build_srcset(img, settings, derivative):
     process = settings["IMAGE_PROCESS"][derivative]
 
     default = process["default"]
-    if isinstance(default, six.string_types):
+    default_name = ""
+    if isinstance(default, str):
         breakpoints = {i for i, _ in process["srcset"]}
         if default not in breakpoints:
             logger.error(
@@ -530,7 +530,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
                 (default_source_name,),
             )
 
-        if isinstance(default[1], six.string_types):
+        if isinstance(default[1], str):
             default_item_name = default[1]
 
         elif isinstance(default[1], list):
@@ -538,16 +538,22 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
             source = os.path.join(settings["PATH"], default_source["url"][1:])
             destination = os.path.join(
-                s["base_path"],
+                default_source["base_path"],
                 default_source_name,
                 default_item_name,
                 default_source["filename"],
             )
             process_image((source, destination, default[1]), settings)
+        else:
+            raise RuntimeError(
+                "Unexpected type for the second value of tuple "
+                'IMAGE_PROCESS["%s"]["default"]; expected string or list.',
+                (derivative,),
+            )
 
         # Change img src to url of default processed image.
         img["src"] = os.path.join(
-            s["base_url"],
+            default_source["base_url"],
             default_source_name,
             default_item_name,
             default_source["filename"],
@@ -643,14 +649,14 @@ def process_picture(soup, img, group, settings, derivative):
                 (default_source_name,),
             )
 
-        if isinstance(default[1], six.string_types):
+        if isinstance(default[1], str):
             default_item_name = default[1]
 
         elif isinstance(default[1], list):
             default_item_name = "default"
             source = os.path.join(settings["PATH"], default_source["url"][1:])
             destination = os.path.join(
-                s["base_path"],
+                default_source["base_path"],
                 default_source_name,
                 default_item_name,
                 default_source["filename"],
@@ -658,9 +664,16 @@ def process_picture(soup, img, group, settings, derivative):
 
             process_image((source, destination, default[1]), settings)
 
+        else:
+            raise RuntimeError(
+                "Unexpected type for the second value of tuple "
+                'IMAGE_PROCESS["%s"]["default"]; expected string or list.',
+                (derivative,),
+            )
+
         # Change img src to url of default processed image.
         img["src"] = posixpath.join(
-            s["base_url"],
+            default_source["base_url"],
             default_source_name,
             default_item_name,
             default_source["filename"],

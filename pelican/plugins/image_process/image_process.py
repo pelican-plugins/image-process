@@ -36,7 +36,7 @@ Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filen
 
 
 # A lot of inspiration from pyexiftool (https://github.com/smarnach/pyexiftool)
-class ExifTool(object):
+class ExifTool:
     errors = "strict"
     sentinel = b"{ready}"
     block_size = 4096
@@ -264,7 +264,7 @@ basic_ops = {
 def set_default_settings(settings):
     # Set default value for 'IMAGE_PROCESS'.
     if "IMAGE_PROCESS" not in settings:
-        logger.warning("{} No processing instructions defined.".format(LOG_PREFIX))
+        logger.warning(f"{LOG_PREFIX} No processing instructions defined.")
         settings["IMAGE_PROCESS"] = {}
 
     # Set default value for 'IMAGE_PROCESS_DIR'.
@@ -479,7 +479,7 @@ def build_srcset(img, settings, derivative):
     srcset = []
     for src in process["srcset"]:
         file_path = posixpath.join(path.base_url, src[0], path.filename)
-        srcset.append("%s %s" % (file_path, src[0]))
+        srcset.append(f"{file_path} {src[0]}")
         destination = os.path.join(path.base_path, src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
@@ -710,7 +710,7 @@ def process_image(image, settings):
     image[1] = unquote(image[1])
     # image[2] is the transformation
 
-    logger.debug("{} {} -> {}".format(LOG_PREFIX, image[0], image[1]))
+    logger.debug(f"{LOG_PREFIX} {image[0]} -> {image[1]}")
 
     os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 
@@ -722,7 +722,6 @@ def process_image(image, settings):
         or not os.path.exists(image[1])
         or os.path.getmtime(image[0]) > os.path.getmtime(image[1])
     ):
-
         i = Image.open(image[0])
 
         for step in image[2]:

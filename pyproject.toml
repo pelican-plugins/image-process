@@ -30,7 +30,7 @@ classifiers = [
 "Changelog" = "https://github.com/pelican-plugins/image-process/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.8.1,<4.0"
 pelican = "^3 || ^4"
 markdown = {version = "^3.2", optional = true}
 beautifulsoup4 = "^4.9"

@@ -32,7 +32,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pelican = "^3 || ^4"
-markdown = {version = "^3.2", optional = true}
+markdown = {version = ">=3.2", optional = true}
 beautifulsoup4 = "^4.9"
 six = "^1.15.0"
 Pillow = "^9.1 || ^10"

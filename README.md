@@ -1,6 +1,6 @@
 # Image Process: A Plugin for Pelican
 
-[![Build Status](https://img.shields.io/github/workflow/status/pelican-plugins/image-process/build)](https://github.com/pelican-plugins/image-process/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/pelican-plugins/image-process/main.yml?branch=main)](https://github.com/pelican-plugins/image-process/actions)
 [![PyPI Version](https://img.shields.io/pypi/v/pelican-image-process)](https://pypi.org/project/pelican-image-process/)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 

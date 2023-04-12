@@ -1,3 +1,4 @@
+from inspect import cleandoc
 import os
 from pathlib import Path
 from shutil import which
@@ -7,13 +8,11 @@ from invoke import task
 
 PKG_NAME = "image_process"
 PKG_PATH = Path(f"pelican/plugins/{PKG_NAME}")
-TOOLS = ["poetry", "pre-commit"]
+TOOLS = ("poetry", "pre-commit")
 
 ACTIVE_VENV = os.environ.get("VIRTUAL_ENV", None)
-VENV_HOME = Path(
-    os.environ.get("WORKON_HOME", "~/.local/share/virtualenvs")
-).expanduser()
-VENV_PATH = Path(ACTIVE_VENV) if ACTIVE_VENV else (VENV_HOME / PKG_NAME)
+VENV_HOME = Path(os.environ.get("WORKON_HOME", "~/.local/share/virtualenvs"))
+VENV_PATH = Path(ACTIVE_VENV) if ACTIVE_VENV else (VENV_HOME.expanduser() / PKG_NAME)
 VENV = str(VENV_PATH.expanduser())
 BIN_DIR = "bin" if os.name != "nt" else "Scripts"
 VENV_BIN = Path(VENV) / Path(BIN_DIR)
@@ -43,7 +42,7 @@ def black(c, check=False, diff=False):
 
 @task
 def isort(c, check=False, diff=False):
-    """Run isort against the codebase."""
+    """Ensure imports are sorted according to project standards."""
     check_flag, diff_flag = "", ""
     if check:
         check_flag = "-c"
@@ -54,12 +53,13 @@ def isort(c, check=False, diff=False):
 
 @task
 def flake8(c):
-    """Run flake8 against the codebase."""
+    """Check code for PEP8 compliance via Flake8."""
     c.run(f"{CMD_PREFIX}flake8 {PKG_PATH} tasks.py")
 
 
 @task
 def lint(c, diff=False):
+    """Check code style via linting tools."""
     isort(c, check=True, diff=diff)
     black(c, check=True, diff=diff)
     flake8(c)
@@ -83,22 +83,21 @@ def precommit(c):
 
 @task
 def setup(c):
-    """Run this to get your development environment set up."""
+    """Set up the development environment."""
     if which("poetry") or ACTIVE_VENV:
         tools(c)
-        print("** Upgrade pip.")
         c.run(f"{CMD_PREFIX}python -m pip install pip --upgrade")
-        print(f"** Install {PKG_NAME} for development using poetry.")
         c.run(f"{POETRY} install")
         precommit(c)
+        print("\nDevelopment environment should now be set up and ready!\n")
     else:
-        sys.exit(
-            """Poetry is not installed, and there is no active virtual environment
-            available. You can either manually create and activate a virtual
-            environment, or you can install Poetry via:
+        error_message = """
+            Poetry is not installed, and there is no active virtual environment available.
+            You can either manually create and activate a virtual environment, or you can
+            install Poetry via:
 
             curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 
             Once you have taken one of the above two steps, run `invoke setup` again.
             """  # noqa: E501
-        )
+        sys.exit(cleandoc(error_message))

@@ -4,6 +4,7 @@ Image Process
 
 This plugin process images according to their class attribute.
 """
+
 import codecs
 import collections
 import copy

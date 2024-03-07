@@ -36,7 +36,7 @@ markdown = {version = ">=3.2", optional = true}
 beautifulsoup4 = "^4.9"
 six = "^1.15.0"
 Pillow = "^9.1 || ^10"
-lxml = "^4.6"
+lxml = "^4.6 || ^5"
 
 [tool.poetry.dev-dependencies]
 black = "^23"

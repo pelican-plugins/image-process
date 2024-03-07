@@ -742,7 +742,7 @@ def process_image(image, settings):
 
         ExifTool.copy_tags(image[0], image[1])
     else:
-        logger.debug("{} Skipping {} -> {}".format(LOG_PREFIX, image[0], image[1]))
+        logger.debug(f"{LOG_PREFIX} Skipping {image[0]} -> {image[1]}")
 
 
 def dump_config(pelican):

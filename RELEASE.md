@@ -1,0 +1,3 @@
+Release type: patch
+
+*bug*: Wait before we actually need to process the image for checking if Pillow can handle it; this avoids loading the image needlessly. See [Pull Request #72](https://github.com/pelican-plugins/image-process/pull/72). Thanks [Patrick Fournier](https://github.com/patrickfournier)!

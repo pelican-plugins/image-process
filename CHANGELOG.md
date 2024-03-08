@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+3.0.4 - 2024-03-08
+------------------
+
+Remove upper bounds on several dependency versions.
+
+Contributed by [Justin Mayer](https://github.com/justinmayer) via [PR #81](https://github.com/pelican-plugins/image-process/pull/81/)
+
+
 3.0.3 - 2022-07-18
 ------------------
 

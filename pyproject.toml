@@ -31,16 +31,15 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pelican = "^3 || ^4"
+pelican = ">=4.5"
 markdown = {version = ">=3.2", optional = true}
-beautifulsoup4 = "^4.9"
-six = "^1.15.0"
-Pillow = "^9.1 || ^10"
-lxml = "^4.6"
+beautifulsoup4 = ">=4.9"
+Pillow = ">=9.1"
+lxml = ">=4.6"
 
 [tool.poetry.dev-dependencies]
 black = "^23"
-flake8 = "^4.0"
+flake8 = "^5.0"
 flake8-black = "^0.3.3"
 invoke = "^2.0"
 isort = "^5.12.0"
@@ -48,8 +47,7 @@ markdown = "^3.2"
 pytest = "^6.0"
 pytest-cov = "^2.8"
 pytest-mock = "^3.3.1"
-pytest-pythonpath = "^0.7.3"
-pytest-sugar = "^0.9.4"
+pytest-sugar = ">=1.0.0"
 
 [tool.poetry.extras]
 markdown = ["markdown"]

@@ -322,7 +322,7 @@ not appear in your final article.
 
 Available operations for transformations are:
 
-* `crop <top> <left> <right> <bottom>`:
+* `crop <left> <top> <right> <bottom>`:
 
     Crop the image to the box (`<left>`, `<top>`)-(`<right>`, `<bottom>`). Values
     can be absolute (a number) or relative to the size of the image (a

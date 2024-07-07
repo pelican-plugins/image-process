@@ -1,56 +1,67 @@
-[tool.poetry]
+[project]
 name = "pelican-image-process"
 version = "3.0.4"
 description = "Pelican plugin that automates image processing."
-authors = ["Pelican Dev Team <authors@getpelican.com>"]
-license = "AGPL-3.0"
+authors = [{name = "Pelican Dev Team", email = "authors@getpelican.com"}]
+license = {text = "AGPL-3.0"}
 readme = "README.md"
 keywords = ["pelican", "plugin", "image", "responsive", "optimization"]
-repository = "https://github.com/pelican-plugins/image-process"
-documentation = "https://docs.getpelican.com"
-packages = [
-    { include = "pelican" },
-]
-
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: Pelican",
     "Framework :: Pelican :: Plugins",
     "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+requires-python = ">=3.8.1,<4.0"
+dependencies = [
+    "pelican>=4.5",
+    "beautifulsoup4>=4.9",
+    "Pillow>=9.1",
+    "lxml>=4.6",
+]
 
-[tool.poetry.urls]
-"Funding" = "https://donate.getpelican.com/"
-"Bug Tracker" = "https://github.com/pelican-plugins/image-process/issues"
-"Changelog" = "https://github.com/pelican-plugins/image-process/blob/main/CHANGELOG.md"
+[project.urls]
+Homepage = "https://github.com/pelican-plugins/image-process"
+"Issue Tracker" = "https://github.com/pelican-plugins/image-process/issues"
+Funding = "https://donate.getpelican.com/"
 
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-pelican = ">=4.5"
-markdown = {version = ">=3.2", optional = true}
-beautifulsoup4 = ">=4.9"
-Pillow = ">=9.1"
-lxml = ">=4.6"
+[project.optional-dependencies]
+markdown = ["markdown>=3.4"]
 
-[tool.poetry.dev-dependencies]
-black = "^23"
-flake8 = "^5.0"
-flake8-black = "^0.3.3"
-invoke = "^2.0"
-isort = "^5.12.0"
-markdown = "^3.2"
-pytest = "^6.0"
-pytest-cov = "^2.8"
-pytest-mock = "^3.3.1"
-pytest-sugar = ">=1.0.0"
+[tool.pdm]
 
-[tool.poetry.extras]
-markdown = ["markdown"]
+[tool.pdm.dev-dependencies]
+lint = [
+    "invoke>=2.2",
+    "ruff>=0.5.0,<0.6.0"
+]
+test = [
+    "markdown>=3.4",
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.3.1",
+    "pytest-sugar>=1.0",
+]
+
+[tool.pdm.build]
+source-includes = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+]
+includes = ["pelican/"]
+excludes = ["**/.DS_Store", "**/test_data/**", "tasks.py"]
 
 [tool.autopub]
 project-name = "Image Process"
@@ -58,17 +69,47 @@ git-username = "botpub"
 git-email = "52496925+botpub@users.noreply.github.com"
 append-github-contributor = true
 
-[tool.isort]
-# Maintain compatibility with Black
-profile = "black"
+[tool.ruff.lint]
+select = [
+  "B",   # flake8-bugbear
+  "BLE", # flake8-blind-except
+  "C4",  # flake8-comprehensions
+  "D",   # pydocstyle
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "PGH", # pygrep-hooks
+  "PL",  # pylint
+  "RET", # flake8-return
+  "RUF", # ruff-specific rules
+  "SIM", # flake8-simplify
+  "T10", # flake8-debugger
+  "T20", # flake8-print
+  "TID", # flake8-tidy-imports
+  "TRY", # tryceratops
+  "UP",  # pyupgrade
+  "W",   # pycodestyle
+  "YTT", # flake8-2020
+]
 
-# Sort imports within their section independent of the import type
-force_sort_within_sections = true
+ignore = [
+  "D100",    # missing docstring in public module
+  "D103",    # missing docstring in public function
+  "D104",    # missing docstring in public package
+  "D203",    # blank line before class docstring
+  "D213",    # multi-line docstring summary should start at the second line
+  "ISC001",  # disabled so `ruff format` works without warning
+  "PLR0912", # too many branches
+  "TRY003",  # long messages outside the exception class
+]
 
-# Designate "pelican" as separate import section
-known_pelican = "pelican"
-sections = "FUTURE,STDLIB,THIRDPARTY,PELICAN,FIRSTPARTY,LOCALFOLDER"
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+known-first-party = ["pelican"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

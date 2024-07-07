@@ -5,101 +5,90 @@ on: [push, pull_request]
 env:
   PYTEST_ADDOPTS: "--color=yes"
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    name: Test - ${{ matrix.python-version }}
+    name: Test - Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
       - name: Install Exiftool
         run: sudo apt install libimage-exiftool-perl
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+
+      - name: Set up Python ${{ matrix.python-version }} & PDM
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Pip cache
-        uses: actions/cache@v2
-        id: pip-cache
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ hashFiles('**/pyproject.toml') }}
-      - name: Upgrade Pip
-        run: python -m pip install --upgrade pip
-      - name: Install Poetry
-        run: python -m pip install poetry
-      - name: Set up Poetry cache
-        uses: actions/cache@v2
-        id: poetry-cache
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: poetry-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies
-        run: |
-          poetry run pip install --upgrade pip
-          poetry install
-      - name: Run tests
-        run: poetry run invoke tests
+          cache: true
+          cache-dependency-path: ./pyproject.toml
 
+      - name: Install dependencies
+        run: pdm install
+
+      - name: Run tests
+        run: pdm run invoke tests
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.9"
-      - name: Set Poetry cache
-        uses: actions/cache@v2
-        id: poetry-cache
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: poetry-${{ hashFiles('**/poetry.lock') }}
-      - name: Upgrade Pip
-        run: python -m pip install --upgrade pip
-      - name: Install Poetry
-        run: python -m pip install poetry
-      - name: Install dependencies
-        run: |
-          poetry run pip install --upgrade pip
-          poetry install
-      - name: Run linters
-        run: poetry run invoke lint
+      - uses: actions/checkout@v4
 
+      - name: Set up Python & PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pdm install
+
+      - name: Run linters
+        run: pdm run invoke lint --diff
 
   deploy:
     name: Deploy
+    environment: Deployment
     needs: [test, lint]
     runs-on: ubuntu-latest
-    if: ${{ github.ref=='refs/heads/main' && github.event_name!='pull_request' }}
+    if: github.ref=='refs/heads/main' && github.event_name!='pull_request'
+
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.10"
+
       - name: Check release
         id: check_release
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry githubrelease httpx==0.16.1 autopub
-          echo "##[set-output name=release;]$(autopub check)"
+          python -m pip install autopub httpx
+          python -m pip install https://github.com/scikit-build/github-release/archive/master.zip
+          autopub check
+
       - name: Publish
-        if: ${{ steps.check_release.outputs.release=='' }}
+        if: ${{ steps.check_release.outputs.autopub_release=='true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git remote set-url origin https://$GITHUB_TOKEN@github.com/${{ github.repository }}
           autopub prepare
-          poetry build
           autopub commit
+          autopub build
           autopub githubrelease
-          poetry publish -u __token__ -p $PYPI_PASSWORD
+
+      - name: Upload package to PyPI
+        if: ${{ steps.check_release.outputs.autopub_release=='true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1

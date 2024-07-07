@@ -2,6 +2,7 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/pelican-plugins/image-process/main.yml?branch=main)](https://github.com/pelican-plugins/image-process/actions)
 [![PyPI Version](https://img.shields.io/pypi/v/pelican-image-process)](https://pypi.org/project/pelican-image-process/)
+[![Downloads](https://img.shields.io/pypi/dm/pelican-image-process)](https://pypi.org/project/pelican-image-process/)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
 *Image Process* is a plugin for [Pelican](https://getpelican.com),
@@ -26,6 +27,12 @@ will also install the required dependencies automatically.
 ```sh
 python -m pip install pelican-image-process
 ```
+
+As long as you have not explicitly added a `PLUGINS` setting to your Pelican
+settings file, then the newly-installed plugin should be automatically detected
+and enabled. Otherwise, you must add `image_process` to your existing `PLUGINS`
+list. For more information, please see the documentation regarding
+[How to Use Plugins](https://docs.getpelican.com/en/latest/plugins.html#how-to-use-plugins).
 
 You will then need to configure your desired transformations (see *Usage*
 below) and add the appropriate class to images you want processed.

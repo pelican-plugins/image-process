@@ -53,7 +53,8 @@ SINGLE_TRANSFORMS = {
 
 
 def get_settings(**kwargs):
-    """Provide tweaked setting dictionaries for testing
+    """Provide tweaked setting dictionaries for testing.
+
     Set keyword arguments to override specific settings.
     """
     DEFAULT_CONFIG = {
@@ -478,7 +479,8 @@ def test_exiftool_process_is_started_only_when_necessary(mocker, copy_tags):
     if shutil.which("exiftool") is None:
         warnings.warn(
             "EXIF tags copying will not be tested because the exiftool program could "
-            "not be found. Please install exiftool and make sure it is in your path."
+            "not be found. Please install exiftool and make sure it is in your path.",
+            stacklevel=2,
         )
         return
 
@@ -510,7 +512,8 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
     if shutil.which("exiftool") is None:
         warnings.warn(
             "EXIF tags copying will not be tested because the exiftool program could "
-            "not be found. Please install exiftool and make sure it is in your path."
+            "not be found. Please install exiftool and make sure it is in your path.",
+            stacklevel=2,
         )
         return
 
@@ -533,11 +536,11 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
     destination_path = tmp_path.joinpath(transform_id, image_name)
 
     expected_results = subprocess.run(
-        ["exiftool", "-json", image_path], stdout=subprocess.PIPE
+        ["exiftool", "-json", image_path], stdout=subprocess.PIPE, check=False
     )
     expected_tags = json.loads(expected_results.stdout)[0]
     for tag in exif_tags:
-        assert tag in expected_tags.keys()
+        assert tag in expected_tags
 
     if copy_tags:
         ExifTool.start_exiftool()
@@ -546,7 +549,7 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
         ExifTool.stop_exiftool()
 
     actual_results = subprocess.run(
-        ["exiftool", "-json", destination_path], stdout=subprocess.PIPE
+        ["exiftool", "-json", destination_path], stdout=subprocess.PIPE, check=False
     )
 
     assert actual_results.returncode == 0
@@ -554,10 +557,10 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
     actual_tags = json.loads(actual_results.stdout)[0]
     for tag in exif_tags:
         if copy_tags:
-            assert tag in actual_tags.keys()
+            assert tag in actual_tags
             assert expected_tags[tag] == actual_tags[tag]
         else:
-            assert tag not in actual_tags.keys()
+            assert tag not in actual_tags
 
 
 def test_is_img_identifiable():
@@ -590,4 +593,4 @@ def generate_test_images():
             )
             image_count += 1
 
-    print(f"{image_count} test images generated!")
+    print(f"{image_count} test images generated!")  # noqa: T201

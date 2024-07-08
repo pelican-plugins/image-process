@@ -1,11 +1,11 @@
-"""
-Image Process
-=============
+"""Image Process plugin for Pelican.
 
-This plugin process images according to their class attribute.
+This plugin processes images according to their class attributes.
 """
+
 import codecs
 import collections
+import contextlib
 import copy
 import functools
 import html
@@ -20,11 +20,10 @@ import sys
 from urllib.parse import unquote, urlparse
 from urllib.request import pathname2url, url2pathname
 
-from PIL import Image, ImageFilter, UnidentifiedImageError
 from bs4 import BeautifulSoup
+from PIL import Image, ImageFilter, UnidentifiedImageError
 
-from pelican import __version__ as pelican_version
-from pelican import signals
+from pelican import __version__ as pelican_version, signals
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +36,8 @@ Path = collections.namedtuple("Path", ["base_url", "source", "base_path", "filen
 
 # A lot of inspiration from pyexiftool (https://github.com/smarnach/pyexiftool)
 class ExifTool:
+    """Class to manage EXIF tags via exiftool."""
+
     errors = "strict"
     sentinel = b"{ready}"
     block_size = 4096
@@ -45,31 +46,33 @@ class ExifTool:
 
     @staticmethod
     def start_exiftool():
+        """Instantiate ExifTool instance."""
         if shutil.which("exiftool") is None:
             logger.warning(
-                "%s EXIF tags will not be copied because the exiftool program "
-                "could not be found.  Please install exiftool and make sure it "
-                "is in your path." % LOG_PREFIX
+                f"{LOG_PREFIX} EXIF tags will not be copied because the `exiftool` "
+                "executable could not be found. Please install exiftool and make sure "
+                "it is on your $PATH."
             )
         else:
             ExifTool._instance = ExifTool()
 
     @staticmethod
     def copy_tags(src, dst):
+        """Copy EXIF tags."""
         if ExifTool._instance is not None:
             ExifTool._instance._copy_tags(src, dst)
 
     @staticmethod
     def stop_exiftool():
+        """Tear down ExifTool instance."""
         ExifTool._instance = None
 
     def __init__(self):
+        """Invoke exiftool via subprocess call."""
         self.encoding = sys.getfilesystemencoding()
         if self.encoding != "mbcs":
-            try:
+            with contextlib.suppress(LookupError):
                 codecs.lookup_error("surrogateescape")
-            except LookupError:
-                pass
 
         with open(os.devnull, "w") as devnull:
             self.process = subprocess.Popen(
@@ -89,6 +92,7 @@ class ExifTool:
             )
 
     def __del__(self):
+        """Terminate process if still present."""
         if self.process is not None:
             self.process.terminate()
 
@@ -104,7 +108,7 @@ class ExifTool:
         self._send_command(params)
 
     def _send_command(self, params):
-        self.process.stdin.write(b"\n".join(params + (b"-j\n", b"-execute\n")))
+        self.process.stdin.write(b"\n".join((*params, b"-j\n", b"-execute\n")))
         self.process.stdin.flush()
         output = b""
         fd = self.process.stdout.fileno()
@@ -126,18 +130,9 @@ def convert_box(image, top, left, right, bottom):
     img_width = bbox[2] - bbox[0]
     img_height = bbox[3] - bbox[1]
 
-    if top[-1] == "%":
-        top = img_height * float(top[:-1]) / 100.0
-    else:
-        top = float(top)
-    if left[-1] == "%":
-        left = img_width * float(left[:-1]) / 100.0
-    else:
-        left = float(left)
-    if right[-1] == "%":
-        right = img_width * float(right[:-1]) / 100.0
-    else:
-        right = float(right)
+    top = img_height * float(top[:-1]) / 100.0 if top[-1] == "%" else float(top)
+    left = img_width * float(left[:-1]) / 100.0 if left[-1] == "%" else float(left)
+    right = img_width * float(right[:-1]) / 100.0 if right[-1] == "%" else float(right)
     if bottom[-1] == "%":
         bottom = img_height * float(bottom[:-1]) / 100.0
     else:
@@ -173,8 +168,7 @@ def resize(i, w, h):
 
 
 def scale(i, w, h, upscale, inside):
-    """Resize the image to the dimension specified, keeping the aspect
-    ratio.
+    """Resize the image to the dimension specified, keeping the aspect ratio.
 
     w, h (width, height) must be strings specifying either a number
     or a percentage, or "None" to ignore this constraint.
@@ -202,10 +196,7 @@ def scale(i, w, h, upscale, inside):
     else:
         h = float(h) / ih
 
-    if inside:
-        scale = min(w, h)
-    else:
-        scale = max(w, h)
+    scale = min(w, h) if inside else max(w, h)
 
     if upscale in [0, "0", "False", False]:
         scale = min(scale, 1.0)
@@ -331,21 +322,21 @@ def harvest_images_in_fragment(fragment, settings):
 
         try:
             d = settings["IMAGE_PROCESS"][derivative]
-        except KeyError:
-            raise RuntimeError("Derivative %s undefined." % derivative)
+        except KeyError as e:
+            raise RuntimeError(f"Derivative {derivative} undefined.") from e
 
         if isinstance(d, list):
             # Single source image specification.
             process_img_tag(img, settings, derivative)
 
         elif not isinstance(d, dict):
-            raise RuntimeError(
-                "Derivative %s definition not handled"
-                "(must be list or dict)" % derivative
+            raise TypeError(
+                f"Derivative {derivative} definition not handled"
+                "(must be list or dict)"
             )
 
         elif "type" not in d:
-            raise RuntimeError('"type" is mandatory for %s.' % derivative)
+            raise RuntimeError(f'"type" is mandatory for {derivative}.')
 
         elif d["type"] == "image":
             # Single source image specification.
@@ -378,12 +369,13 @@ def compute_paths(img, settings, derivative):
         posixpath.dirname(img["src"]), pathname2url(derivative_path)
     )
 
-    if pelican_version != "unknown" and int(pelican_version.split(".")[0]) < 4:
+    PELICAN_V4 = 4
+    if pelican_version != "unknown" and int(pelican_version.split(".")[0]) < PELICAN_V4:
         file_paths = settings["filenames"]
     else:
         file_paths = settings["static_content"]
 
-    for f, contobj in file_paths.items():
+    for _f, contobj in file_paths.items():
         save_as = contobj.get_url_setting("save_as")
         # save_as can be set to empty string, which would match everything
         if save_as and img_src_path.endswith(save_as):
@@ -438,7 +430,7 @@ def process_img_tag(img, settings, derivative):
 def is_img_identifiable(img_filepath):
     try:
         Image.open(img_filepath)
-        return True
+        return True  # noqa: TRY300
     except (FileNotFoundError, UnidentifiedImageError):
         return False
 
@@ -488,9 +480,7 @@ def build_srcset(img, settings, derivative):
 
 
 def convert_div_to_picture_tag(soup, img, group, settings, derivative):
-    """
-    Convert a div containing multiple images to a picture.
-    """
+    """Convert a div containing multiple images to a picture."""
     process_dir = settings["IMAGE_PROCESS_DIR"]
     # Compile sources URL. Special source "default" uses the main
     # image URL. Other sources use the img with classes
@@ -569,8 +559,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
         srcset = []
         for src in s["srcset"]:
             srcset.append(
-                "%s %s"
-                % (
+                "{} {}".format(
                     os.path.join(s["base_url"], s["name"], src[0], s["filename"]),
                     src[0],
                 )
@@ -590,8 +579,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
 
 def process_picture(soup, img, group, settings, derivative):
-    """
-    Convert a simplified picture to a full HTML picture:
+    """Convert a simplified picture to a full HTML picture. See following example.
 
     <picture>
         <source class="source-1" src="image1.jpg"></source>
@@ -609,7 +597,6 @@ def process_picture(soup, img, group, settings, derivative):
     </picture>
 
     """
-
     process_dir = settings["IMAGE_PROCESS_DIR"]
     process = settings["IMAGE_PROCESS"][derivative]
     # Compile sources URL. Special source "default" uses the main
@@ -684,8 +671,7 @@ def process_picture(soup, img, group, settings, derivative):
         srcset = []
         for src in s["srcset"]:
             srcset.append(
-                "%s %s"
-                % (
+                "{} {}".format(
                     posixpath.join(s["base_url"], s["name"], src[0], s["filename"]),
                     src[0],
                 )
@@ -725,7 +711,7 @@ def process_image(image, settings):
         i = Image.open(image[0])
 
         for step in image[2]:
-            if hasattr(step, "__call__"):
+            if callable(step):
                 i = step(i)
             else:
                 elems = step.split(" ")

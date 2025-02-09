@@ -316,6 +316,11 @@ def harvest_images_in_fragment(fragment, settings):
         for c in img["class"]:
             if c.startswith("image-process-"):
                 derivative = c[14:]
+                if settings.get("IMAGE_PROCESS_REMOVE_CLASS", False):
+                    if len(img["class"]) == 1:
+                        del img["class"]
+                    else:
+                        img["class"].remove(c)
                 break
         else:
             continue

@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import warnings
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, UnidentifiedImageError
 import pytest
 
 from pelican.plugins.image_process import (
@@ -13,8 +13,8 @@ from pelican.plugins.image_process import (
     compute_paths,
     harvest_images_in_fragment,
     process_image,
-    try_open_image,
     set_default_settings,
+    try_open_image,
 )
 
 # Prepare test image constants.
@@ -557,15 +557,18 @@ def test_try_open_image():
     for test_image in TEST_IMAGES:
         assert try_open_image(test_image)
 
-    assert not try_open_image("image/that/does/not/exist.png")
+    with pytest.raises(FileNotFoundError):
+        try_open_image("image/that/does/not/exist.png")
 
-    assert not try_open_image(TEST_DATA.joinpath("folded_puzzle.png"))
-    assert not try_open_image(TEST_DATA.joinpath("minimal.svg"))
+    with pytest.raises(UnidentifiedImageError):
+        assert not try_open_image(TEST_DATA.joinpath("folded_puzzle.png"))
+        assert not try_open_image(TEST_DATA.joinpath("minimal.svg"))
 
     img = {"src": "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"}
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
     path = compute_paths(img, settings, derivative="thumb")
-    assert not try_open_image(path.source)
+    with pytest.raises(FileNotFoundError):
+        assert not try_open_image(path.source)
 
 
 def generate_test_images():

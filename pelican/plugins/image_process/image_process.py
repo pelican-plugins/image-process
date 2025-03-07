@@ -672,18 +672,12 @@ def try_open_image(path):
         i = Image.open(path)
     except UnidentifiedImageError:
         logger.warning(
-            "%s Source image %s is not supported by Pillow.",
-            LOG_PREFIX,
-            path,
+            f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.'
         )
-        return None
+        raise
     except FileNotFoundError:
-        logger.warning(
-            "%s Source image %s not found.",
-            LOG_PREFIX,
-            path,
-        )
-        return None
+        logger.warning(f'{LOG_PREFIX} Source image "{path}" not found.')
+        raise
 
     return i
 
@@ -705,8 +699,9 @@ def process_image(image, settings):
     ):
         logger.debug(f"{LOG_PREFIX} Processing {image[0]} -> {image[1]}")
 
-        i = try_open_image(image[0])
-        if i is None:
+        try:
+            i = try_open_image(image[0])
+        except (UnidentifiedImageError, FileNotFoundError):
             return
 
         for step in image[2]:
@@ -725,7 +720,7 @@ def process_image(image, settings):
 
         ExifTool.copy_tags(image[0], image[1])
     else:
-        logger.debug("{} Skipping {} -> {}".format(LOG_PREFIX, image[0], image[1]))
+        logger.debug(f"{LOG_PREFIX} Skipping {image[0]} -> {image[1]}")
 
 
 def dump_config(pelican):

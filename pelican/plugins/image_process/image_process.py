@@ -126,15 +126,13 @@ def convert_box(image, top, left, right, bottom):
     t, l, r, b (top, left, right, bottom) must be strings specifying
     either a number or a percentage.
     """
-    bbox = image.getbbox()
-    img_width = bbox[2] - bbox[0]
-    img_height = bbox[3] - bbox[1]
-
-    top = img_height * float(top[:-1]) / 100.0 if top[-1] == "%" else float(top)
-    left = img_width * float(left[:-1]) / 100.0 if left[-1] == "%" else float(left)
-    right = img_width * float(right[:-1]) / 100.0 if right[-1] == "%" else float(right)
+    top = image.height * float(top[:-1]) / 100.0 if top[-1] == "%" else float(top)
+    left = image.width * float(left[:-1]) / 100.0 if left[-1] == "%" else float(left)
+    right = (
+        image.width * float(right[:-1]) / 100.0 if right[-1] == "%" else float(right)
+    )
     if bottom[-1] == "%":
-        bottom = img_height * float(bottom[:-1]) / 100.0
+        bottom = image.height * float(bottom[:-1]) / 100.0
     else:
         bottom = float(bottom)
 
@@ -178,9 +176,8 @@ def scale(i, w, h, upscale, inside):
     If inside is True, the resulting image will not be larger than the
     dimensions specified, else it will not be smaller.
     """
-    bbox = i.getbbox()
-    iw = bbox[2] - bbox[0]
-    ih = bbox[3] - bbox[1]
+    iw = i.width
+    ih = i.height
 
     if w == "None":
         w = 1.0

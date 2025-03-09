@@ -28,7 +28,7 @@ requires-python = ">=3.8.1,<4.0"
 dependencies = [
     "pelican>=4.5",
     "beautifulsoup4>=4.9",
-    "Pillow>=9.1,<10.3",
+    "Pillow>=9.1",
     "lxml>=4.6",
 ]
 

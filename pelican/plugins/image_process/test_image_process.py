@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import warnings
 
-from PIL import Image, ImageChops
+from PIL import Image
 import pytest
 
 from pelican.plugins.image_process import (
@@ -20,8 +20,11 @@ from pelican.plugins.image_process import (
 # Prepare test image constants.
 HERE = Path(__file__).resolve().parent
 TEST_DATA = HERE.joinpath("test_data").resolve()
+SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "webp"]
+PNG_TEST_IMAGES = [TEST_DATA.joinpath("pelican-bird.png").resolve()]
 TEST_IMAGES = [
-    TEST_DATA.joinpath(f"pelican-bird.{ext}").resolve() for ext in ["jpg", "png"]
+    TEST_DATA.joinpath(f"pelican-bird.{ext}").resolve()
+    for ext in SUPPORTED_IMAGE_FORMATS
 ]
 EXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("exif", f"pelican-bird.{ext}").resolve()
@@ -79,7 +82,7 @@ def test_undefined_transform():
 
 
 @pytest.mark.parametrize("transform_id, transform_params", SINGLE_TRANSFORMS.items())
-@pytest.mark.parametrize("image_path", TEST_IMAGES)
+@pytest.mark.parametrize("image_path", PNG_TEST_IMAGES)
 def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     """Test the raw transform and their results on images."""
     settings = get_settings()
@@ -92,9 +95,41 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
 
     transformed = Image.open(destination_path)
     expected = Image.open(expected_path)
-    # Image.getbbox() returns None if there are only black pixels in the image:
-    image_diff = ImageChops.difference(transformed, expected).getbbox()
-    assert image_diff is None
+
+    # We need to make our tests slightly tolerant because
+    # the `detail` and `smooth_more` filters are slightly different in Pillow 10.3+
+    # depending on the platform on which they are run.
+    assert transformed.size == expected.size
+    if transformed.mode == "RGB":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata())
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+    elif transformed.mode == "L":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata())
+        ):
+            assert abs(transformed_pixel - expected_pixel) <= 1
+    else:
+        raise ValueError(f"Unsupported image mode: {transformed.mode}")
+
+
+@pytest.mark.parametrize("format", SUPPORTED_IMAGE_FORMATS)
+@pytest.mark.parametrize("image_path", TEST_IMAGES)
+def test_image_formats(tmp_path, format, image_path):
+    """Test that we can process images in various formats."""
+    settings = get_settings()
+
+    destination_path = tmp_path.joinpath(f"processed.{format}")
+
+    process_image((str(image_path), str(destination_path), []), settings)
+
+    original = Image.open(image_path)
+    transformed = Image.open(destination_path)
+
+    assert transformed.size == original.size
 
 
 @pytest.mark.parametrize(
@@ -581,7 +616,7 @@ def test_is_img_identifiable():
 def generate_test_images():
     settings = get_settings()
     image_count = 0
-    for image_path in TEST_IMAGES:
+    for image_path in PNG_TEST_IMAGES:
         for transform_id, transform_params in SINGLE_TRANSFORMS.items():
             process_image(
                 (

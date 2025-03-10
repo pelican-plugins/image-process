@@ -488,6 +488,9 @@ the transformed images. You must have [exiftool](https://exiftool.org/) installe
 IMAGE_PROCESS_COPY_EXIF_TAGS = True
 ```
 
+Note that `exiftool` prior to version 12.46 cannot write WebP images, so if you work
+with WebP images, you should use version 12.46 or later.
+
 ## Known Issues
 
 * Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11).

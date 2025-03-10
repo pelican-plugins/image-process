@@ -488,6 +488,14 @@ the transformed images. You must have [exiftool](https://exiftool.org/) installe
 IMAGE_PROCESS_COPY_EXIF_TAGS = True
 ```
 
+#### Removing `image-process-<transform>` from Processed Images
+
+When `IMAGE_PROCESS_REMOVE_CLASS` is set to `True`, *Image Process* will automatically remove the `image-process-<transform>` CSS class from transformed images. This can be useful if you want to avoid exposing the transformation details in the HTML output or if you have custom styling that conflicts with these classes.
+
+```python
+IMAGE_PROCESS_REMOVE_CLASS = True
+```
+
 ## Known Issues
 
 * Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11).

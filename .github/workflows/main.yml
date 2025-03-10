@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Exiftool
         run: sudo apt install libimage-exiftool-perl
@@ -41,6 +43,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python & PDM
         uses: pdm-project/setup-pdm@v4
@@ -75,8 +79,7 @@ jobs:
       - name: Check release
         id: check_release
         run: |
-          python -m pip install autopub httpx
-          python -m pip install https://github.com/scikit-build/github-release/archive/master.zip
+          python -m pip install autopub[github]
           autopub check
 
       - name: Publish

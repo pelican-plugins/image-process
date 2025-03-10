@@ -47,20 +47,22 @@ def format(c, check=False, diff=False):
 
 
 @task
-def ruff(c, fix=False, diff=False):
+def ruff(c, concise=False, fix=False, diff=False):
     """Run Ruff to ensure code meets project standards."""
-    diff_flag, fix_flag = "", ""
+    concise_flag, fix_flag, diff_flag = "", "", ""
+    if concise:
+        concise_flag = "--output-format=concise"
     if fix:
         fix_flag = "--fix"
     if diff:
         diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .", pty=PTY)
+    c.run(f"{CMD_PREFIX}ruff check {concise_flag} {diff_flag} {fix_flag} .", pty=PTY)
 
 
 @task
-def lint(c, fix=False, diff=False):
+def lint(c, concise=False, fix=False, diff=False):
     """Check code style via linting tools."""
-    ruff(c, fix=fix, diff=diff)
+    ruff(c, concise=concise, fix=fix, diff=diff)
     format(c, check=(not fix), diff=diff)
 
 

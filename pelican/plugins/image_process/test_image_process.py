@@ -167,8 +167,7 @@ def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
 
     img_tag_orig = (
-        '<img class="test image-process image-process-crop test2" '
-        f'src="{orig_src}"/>'
+        f'<img class="test image-process image-process-crop test2" src="{orig_src}"/>'
     )
 
     img_tag_processed = harvest_images_in_fragment(img_tag_orig, settings)

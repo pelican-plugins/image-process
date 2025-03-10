@@ -328,8 +328,7 @@ def harvest_images_in_fragment(fragment, settings):
 
         elif not isinstance(d, dict):
             raise TypeError(
-                f"Derivative {derivative} definition not handled"
-                "(must be list or dict)"
+                f"Derivative {derivative} definition not handled (must be list or dict)"
             )
 
         elif "type" not in d:

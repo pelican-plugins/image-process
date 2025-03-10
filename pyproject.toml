@@ -15,16 +15,16 @@ classifiers = [
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.8.1,<4.0"
+requires-python = "~=3.9"
 dependencies = [
     "pelican>=4.5",
     "beautifulsoup4>=4.9",
@@ -33,21 +33,21 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pelican-plugins/image-process"
+"Homepage" = "https://github.com/pelican-plugins/image-process"
 "Issue Tracker" = "https://github.com/pelican-plugins/image-process/issues"
-Funding = "https://donate.getpelican.com/"
+"Changelog" = "https://github.com/pelican-plugins/image-process/blob/main/CHANGELOG.md"
+"Funding" = "https://donate.getpelican.com/"
 
 [project.optional-dependencies]
 markdown = ["markdown>=3.4"]
 
-[tool.pdm]
-
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 lint = [
     "invoke>=2.2",
-    "ruff>=0.6.0,<0.7.0",
+    "ruff>=0.9.9,<1.0.0",
 ]
 test = [
+    "invoke>=2.2",
     "markdown>=3.4",
     "pytest>=7.0",
     "pytest-cov>=4.0",

@@ -95,7 +95,7 @@ Let's say you have defined the transformation described above. To get your
 image processed, it needs to have the right CSS class:
 
 ```html
-<img class="image-process-article-image" src="/images/pelican.jpg"/>
+<img class="image-process-article-image" src="/images/pelican.jpg" />
 ```
 
 This can be produced in Markdown with:
@@ -122,7 +122,6 @@ the `figure` directive:
 > The reStructuredText reader will convert underscores (`_`) to
 > dashes (`-`) in class names. To make sure everything runs
 > smoothly, do not use underscores in your transformation names.
-
 
 #### Responsive Images
 
@@ -180,7 +179,7 @@ image from the original image (the original image is the value of the
 `src` attribute of the `<img>`). Image descriptions are hints
 about the resolution of the associated image and must have the suffix
 `x`. The `default` setting specifies the image to use to replace the `src`
-attribute of the image.  This is the image that will be displayed by
+attribute of the image. This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
 The `large-photo` transformation is an example of a transformation
@@ -194,7 +193,7 @@ the original image (the original image is the value of the `src`
 attribute of the `<img>`). Image descriptions are hints about the
 width in pixels of the associated image and must have the suffix
 `w`. The `default` setting specifies the image to use to replace the `src`
-attribute of the image.  This is the image that will be displayed by
+attribute of the image. This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
 In the two examples above, the `default` setting is a string referring to
@@ -210,7 +209,7 @@ image replacement case, described above.
 So, in HTML it should look like this:
 
 ```html
-<img class="image-process-large-photo" src="/images/pelican.jpg"/>
+<img class="image-process-large-photo" src="/images/pelican.jpg" />
 ```
 
 Which can be produced in Markdown with:
@@ -278,7 +277,7 @@ will be used to find the URL of the original image for this source in
 your article. The source may also have a `media`, which contains a
 rule used by the browser to select the active source. The `default`
 setting specifies the image to use to replace the `src` attribute of
-the `<img>` inside the `<picture>`.  This is the image that will be
+the `<img>` inside the `<picture>`. This is the image that will be
 displayed by browsers that do not support the `<picture>` syntax. In
 this example, it will use the image `640w` from the source `default`.
 A list of operations could have been specified instead of `640w`.
@@ -481,7 +480,7 @@ IMAGE_PROCESS_ENCODING = "utf-8"
 
 #### Copying EXIF Tags
 
-You may ask _Image Process_ to copy the EXIF tags from your original image to
+You may ask *Image Process* to copy the EXIF tags from your original image to
 the transformed images. You must have [exiftool](https://exiftool.org/) installed.
 
 ```python
@@ -491,12 +490,28 @@ IMAGE_PROCESS_COPY_EXIF_TAGS = True
 Note that `exiftool` prior to version 12.46 cannot write WebP images, so if you work
 with WebP images, you should use version 12.46 or later.
 
-#### Removing `image-process-<transform>` from Processed Images
+#### Modifying the `class` Attribute of Processed Images
 
-When `IMAGE_PROCESS_REMOVE_CLASS` is set to `True`, *Image Process* will automatically remove the `image-process-<transform>` CSS class from transformed images. This can be useful if you want to avoid exposing the transformation details in the HTML output or if you have custom styling that conflicts with these classes.
+By default, *Image Process* adds the `image-process-<transform>`
+CSS class to transformed images. This behavior is controlled by the
+`IMAGE_PROCESS_ADD_CLASS` setting (default: `True`) and the
+`IMAGE_PROCESS_CLASS_PREFIX` setting (default: `"image-process-"`).
+
+* If `IMAGE_PROCESS_ADD_CLASS` is `True`, the `<transform>` name is added
+  to the `class` attribute of the image.
+  You can customize the class prefix using `IMAGE_PROCESS_CLASS_PREFIX`.
+
+* If `IMAGE_PROCESS_ADD_CLASS` is `False`, no class attribute will be added.
+
+This setting allows you to control whether transformation details appear
+in the HTML output or to avoid conflicts with custom styles.
 
 ```python
-IMAGE_PROCESS_REMOVE_CLASS = True
+# Use a custom class prefix instead of "image-process-"
+IMAGE_PROCESS_CLASS_PREFIX = "custom-prefix-"
+
+# Disable adding transformation class attributes
+IMAGE_PROCESS_ADD_CLASS = False
 ```
 
 ## Known Issues
@@ -528,7 +543,6 @@ is a helper function to do this for you. From the Python REPL:
 This project is licensed under the [AGPL-3.0 license](http://www.gnu.org/licenses/agpl-3.0.html).
 
 [Pelican image](https://web.archive.org/web/20090505115626/http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726) in test data by Jon Sullivan. Published under a [Creative Commons Public Domain license](https://creativecommons.org/licenses/publicdomain/).
-
 
 [HTML5 responsive images]: https://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
 [BeautifulSoup documentation on parsers]: https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser

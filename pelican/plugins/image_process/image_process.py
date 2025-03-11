@@ -313,11 +313,20 @@ def harvest_images_in_fragment(fragment, settings):
         for c in img["class"]:
             if c.startswith("image-process-"):
                 derivative = c[14:]
-                if settings.get("IMAGE_PROCESS_REMOVE_CLASS", False):
-                    if len(img["class"]) == 1:
-                        del img["class"]
-                    else:
+
+                # Determine whether to modify the class attribute.
+                add_class = settings.get("IMAGE_PROCESS_ADD_CLASS", True)
+                if not add_class:
+                    # Remove class if it's the only one, otherwise remove specific entry
+                    img_classes = img["class"]
+                    img_classes.remove(c) if len(img_classes) > 1 else img.pop("class")
+                else:
+                    class_prefix = settings.get(
+                        "IMAGE_PROCESS_CLASS_PREFIX", "image-process-"
+                    )
+                    if class_prefix != "image-process-":
                         img["class"].remove(c)
+                        img["class"].append(f"{class_prefix}{derivative}")
                 break
         else:
             continue

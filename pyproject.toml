@@ -53,6 +53,7 @@ test = [
     "pytest-cov>=4.0",
     "pytest-mock>=3.3.1",
     "pytest-sugar>=1.0",
+    "pytest-xdist>=3.4.0",
 ]
 
 [tool.pdm.build]
@@ -68,6 +69,9 @@ project-name = "Image Process"
 git-username = "botpub"
 git-email = "52496925+botpub@users.noreply.github.com"
 append-github-contributor = true
+
+[tool.pytest.ini_options]
+addopts = "-n auto -ra"
 
 [tool.ruff.lint]
 select = [

@@ -647,10 +647,6 @@ def test_special_chars_in_image_path_are_handled_properly(mocker, orig_tag, new_
 
     Related to issue #78 https://github.com/pelican-plugins/image-process/issues/78
     """
-    mocker.patch(
-        "pelican.plugins.image_process.image_process.is_img_identifiable",
-        lambda img_filepath: True,
-    )
     mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(

@@ -417,6 +417,14 @@ def process_img_tag(img, settings, derivative):
     process_image((path.source, destination, process), settings)
 
 
+def format_srcset_element(path, condition):
+    # space and comma have special meaning in srcset
+    if " " in path or "," in path:
+        path = urllib.parse.quote(path)
+
+    return f"{path} {condition}"
+
+
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
@@ -446,8 +454,7 @@ def build_srcset(img, settings, derivative):
     srcset = []
     for src in process["srcset"]:
         file_path = posixpath.join(path.base_url, src[0], path.filename)
-        file_path = urllib.parse.quote(file_path)
-        srcset.append(f"{file_path} {src[0]}")
+        srcset.append(format_srcset_element(file_path, src[0]))
         destination = os.path.join(str(path.base_path), src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
@@ -535,8 +542,7 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
         srcset = []
         for src in s["srcset"]:
             url = os.path.join(s["base_url"], s["name"], src[0], s["filename"])
-            url = urllib.parse.quote(str(url))
-            srcset.append(f"{url} {src[0]}")
+            srcset.append(format_srcset_element(str(url), src[0]))
 
             source = os.path.join(settings["PATH"], s["url"][1:])
             destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
@@ -644,8 +650,7 @@ def process_picture(soup, img, group, settings, derivative):
         srcset = []
         for src in s["srcset"]:
             url = posixpath.join(s["base_url"], s["name"], src[0], s["filename"])
-            url = urllib.parse.quote(str(url))
-            srcset.append(f"{url} {src[0]}")
+            srcset.append(format_srcset_element(str(url), src[0]))
 
             source = os.path.join(settings["PATH"], s["url"][1:])
             destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])

@@ -363,7 +363,7 @@ def compute_paths(img, settings, derivative):
     derivative_path = os.path.join(process_dir, derivative)
     # urljoin truncates leading ../ elements
     base_url = posixpath.join(
-        posixpath.dirname(img["src"]), pathname2url(derivative_path)
+        posixpath.dirname(img["src"]), pathname2url(str(derivative_path))
     )
 
     PELICAN_V4 = 4
@@ -398,7 +398,7 @@ def compute_paths(img, settings, derivative):
             src_path = img_src_path.lstrip("/")
         source = os.path.join(settings["PATH"], src_path)
         base_path = os.path.join(
-            settings["OUTPUT_PATH"], os.path.dirname(src_path), derivative_path
+            settings["OUTPUT_PATH"], os.path.dirname(src_path), str(derivative_path)
         )
 
     return Path(base_url, source, base_path, filename)
@@ -409,7 +409,7 @@ def process_img_tag(img, settings, derivative):
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
-    destination = os.path.join(path.base_path, path.filename)
+    destination = os.path.join(str(path.base_path), path.filename)
 
     if not isinstance(process, list):
         process = process["ops"]
@@ -435,7 +435,7 @@ def build_srcset(img, settings, derivative):
         default_name = default
     elif isinstance(default, list):
         default_name = "default"
-        destination = os.path.join(path.base_path, default_name, path.filename)
+        destination = os.path.join(str(path.base_path), default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
     img["src"] = posixpath.join(path.base_url, default_name, path.filename)
@@ -448,7 +448,7 @@ def build_srcset(img, settings, derivative):
         file_path = posixpath.join(path.base_url, src[0], path.filename)
         file_path = urllib.parse.quote(file_path)
         srcset.append(f"{file_path} {src[0]}")
-        destination = os.path.join(path.base_path, src[0], path.filename)
+        destination = os.path.join(str(path.base_path), src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
     if len(srcset) > 0:

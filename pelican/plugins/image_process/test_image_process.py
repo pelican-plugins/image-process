@@ -5,33 +5,47 @@ import shutil
 import subprocess
 import warnings
 
-from PIL import Image, ImageChops
+from PIL import Image, UnidentifiedImageError
 import pytest
 
 from pelican.plugins.image_process import (
     ExifTool,
     compute_paths,
     harvest_images_in_fragment,
-    is_img_identifiable,
     process_image,
     set_default_settings,
+    try_open_image,
 )
 
 # Prepare test image constants.
 HERE = Path(__file__).resolve().parent
 TEST_DATA = HERE.joinpath("test_data").resolve()
-TEST_IMAGES = [
-    TEST_DATA.joinpath(f"pelican-bird.{ext}").resolve() for ext in ["jpg", "png"]
+
+SUPPORTED_TRANSPARENT_IMAGE_FORMATS = ["png", "webp"]
+SUPPORTED_IMAGE_FORMATS = [*SUPPORTED_TRANSPARENT_IMAGE_FORMATS, "jpg"]
+SUPPORTED_EXIF_IMAGE_FORMATS = ["png", "jpg"]  # Exiftool cannot write webp images.
+
+TRANSFORM_TEST_IMAGES = [
+    TEST_DATA.joinpath(f"{file}.png").resolve()
+    for file in ["pelican-bird", "black-borders", "alpha-borders"]
+]
+FILE_FORMAT_TEST_IMAGES = [
+    TEST_DATA.joinpath(f"pelican-bird.{ext}").resolve()
+    for ext in SUPPORTED_IMAGE_FORMATS
+]
+FILE_FORMAT_TEST_IMAGES = FILE_FORMAT_TEST_IMAGES + [
+    TEST_DATA.joinpath(f"alpha-borders.{ext}").resolve()
+    for ext in SUPPORTED_TRANSPARENT_IMAGE_FORMATS
 ]
 EXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("exif", f"pelican-bird.{ext}").resolve()
-    for ext in ["jpg", "png"]
+    for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
 SINGLE_TRANSFORMS = {
-    "crop": ["crop 10 20 100 200"],
+    "crop": ["crop 350 250 650 450"],
     "flip_horizontal": ["flip_horizontal"],
     "flip_vertical": ["flip_vertical"],
     "grayscale": ["grayscale"],
@@ -49,6 +63,15 @@ SINGLE_TRANSFORMS = {
     "smooth": ["smooth"],
     "smooth_more": ["smooth_more"],
     "sharpen": ["sharpen"],
+}
+
+# The expected sizes of the transformed images.
+EXPECTED_SIZES = {
+    "crop": (300, 200),
+    "resize": (200, 250),
+    "rotate": (1226, 1072),
+    "scale_in": (200, 150),
+    "scale_out": (333, 250),
 }
 
 
@@ -79,7 +102,7 @@ def test_undefined_transform():
 
 
 @pytest.mark.parametrize("transform_id, transform_params", SINGLE_TRANSFORMS.items())
-@pytest.mark.parametrize("image_path", TEST_IMAGES)
+@pytest.mark.parametrize("image_path", TRANSFORM_TEST_IMAGES)
 def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     """Test the raw transform and their results on images."""
     settings = get_settings()
@@ -92,9 +115,50 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
 
     transformed = Image.open(destination_path)
     expected = Image.open(expected_path)
-    # Image.getbbox() returns None if there are only black pixels in the image:
-    image_diff = ImageChops.difference(transformed, expected).getbbox()
-    assert image_diff is None
+
+    assert transformed.size == expected.size
+
+    # We need to make our tests slightly tolerant because
+    # the `detail` and `smooth_more` filters are slightly different in Pillow 10.3+
+    # depending on the platform on which they are run.
+    if transformed.mode == "RGB":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata())
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+    elif transformed.mode == "RGBA":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata())
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+            assert abs(transformed_pixel[3] - expected_pixel[3]) <= 1
+    elif transformed.mode == "L":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata())
+        ):
+            assert abs(transformed_pixel - expected_pixel) <= 1
+    else:
+        raise ValueError(f"Unsupported image mode: {transformed.mode}")
+
+
+@pytest.mark.parametrize("image_path", FILE_FORMAT_TEST_IMAGES)
+def test_image_formats(tmp_path, image_path):
+    """Test that we can process images in various formats."""
+    settings = get_settings()
+
+    output_ext = image_path.suffix.lower()
+    destination_path = tmp_path.joinpath(f"processed.{output_ext}")
+
+    process_image((str(image_path), str(destination_path), []), settings)
+
+    original = Image.open(image_path)
+    transformed = Image.open(destination_path)
+
+    assert transformed.size == original.size
 
 
 @pytest.mark.parametrize(
@@ -121,19 +185,13 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     ],
 )
 def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
-    # Allow non-existing images to be processed:
-    mocker.patch(
-        "pelican.plugins.image_process.image_process.is_img_identifiable",
-        lambda img_filepath: True,
-    )
     # Silence image transforms.
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
 
     img_tag_orig = (
-        '<img class="test image-process image-process-crop test2" '
-        f'src="{orig_src}"/>'
+        f'<img class="test image-process image-process-crop test2" src="{orig_src}"/>'
     )
 
     img_tag_processed = harvest_images_in_fragment(img_tag_orig, settings)
@@ -442,11 +500,6 @@ COMPLEX_TRANSFORMS = {
     ],
 )
 def test_picture_generation(mocker, orig_tag, new_tag, call_args):
-    # Allow non-existing images to be processed:
-    mocker.patch(
-        "pelican.plugins.image_process.image_process.is_img_identifiable",
-        lambda img_filepath: True,
-    )
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(
@@ -563,34 +616,45 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
             assert tag not in actual_tags
 
 
-def test_is_img_identifiable():
-    for test_image in TEST_IMAGES:
-        assert is_img_identifiable(test_image)
+def test_try_open_image():
+    for test_image in FILE_FORMAT_TEST_IMAGES:
+        assert try_open_image(test_image)
 
-    assert not is_img_identifiable("image/that/does/not/exist.png")
+    with pytest.raises(FileNotFoundError):
+        try_open_image("image/that/does/not/exist.png")
 
-    assert not is_img_identifiable(TEST_DATA.joinpath("folded_puzzle.png"))
-    assert not is_img_identifiable(TEST_DATA.joinpath("minimal.svg"))
+    with pytest.raises(UnidentifiedImageError):
+        assert not try_open_image(TEST_DATA.joinpath("folded_puzzle.png"))
+        assert not try_open_image(TEST_DATA.joinpath("minimal.svg"))
 
     img = {"src": "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"}
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
     path = compute_paths(img, settings, derivative="thumb")
-    assert not is_img_identifiable(path.source)
+    with pytest.raises(FileNotFoundError):
+        assert not try_open_image(path.source)
 
 
 def generate_test_images():
     settings = get_settings()
     image_count = 0
-    for image_path in TEST_IMAGES:
+    for image_path in TRANSFORM_TEST_IMAGES:
         for transform_id, transform_params in SINGLE_TRANSFORMS.items():
+            destination_path = str(
+                TRANSFORM_RESULTS.joinpath(transform_id, image_path.name)
+            )
             process_image(
                 (
                     str(image_path),
-                    str(TRANSFORM_RESULTS.joinpath(transform_id, image_path.name)),
+                    destination_path,
                     transform_params,
                 ),
                 settings,
             )
             image_count += 1
+
+            # Check the size of the transformed image.
+            expected_size = EXPECTED_SIZES.get(transform_id)
+            transformed = Image.open(destination_path)
+            assert expected_size is None or expected_size == transformed.size
 
     print(f"{image_count} test images generated!")  # noqa: T201

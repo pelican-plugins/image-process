@@ -126,15 +126,13 @@ def convert_box(image, top, left, right, bottom):
     t, l, r, b (top, left, right, bottom) must be strings specifying
     either a number or a percentage.
     """
-    bbox = image.getbbox()
-    img_width = bbox[2] - bbox[0]
-    img_height = bbox[3] - bbox[1]
-
-    top = img_height * float(top[:-1]) / 100.0 if top[-1] == "%" else float(top)
-    left = img_width * float(left[:-1]) / 100.0 if left[-1] == "%" else float(left)
-    right = img_width * float(right[:-1]) / 100.0 if right[-1] == "%" else float(right)
+    top = image.height * float(top[:-1]) / 100.0 if top[-1] == "%" else float(top)
+    left = image.width * float(left[:-1]) / 100.0 if left[-1] == "%" else float(left)
+    right = (
+        image.width * float(right[:-1]) / 100.0 if right[-1] == "%" else float(right)
+    )
     if bottom[-1] == "%":
-        bottom = img_height * float(bottom[:-1]) / 100.0
+        bottom = image.height * float(bottom[:-1]) / 100.0
     else:
         bottom = float(bottom)
 
@@ -178,9 +176,8 @@ def scale(i, w, h, upscale, inside):
     If inside is True, the resulting image will not be larger than the
     dimensions specified, else it will not be smaller.
     """
-    bbox = i.getbbox()
-    iw = bbox[2] - bbox[0]
-    ih = bbox[3] - bbox[1]
+    iw = i.width
+    ih = i.height
 
     if w == "None":
         w = 1.0
@@ -336,8 +333,7 @@ def harvest_images_in_fragment(fragment, settings):
 
         elif not isinstance(d, dict):
             raise TypeError(
-                f"Derivative {derivative} definition not handled"
-                "(must be list or dict)"
+                f"Derivative {derivative} definition not handled (must be list or dict)"
             )
 
         elif "type" not in d:
@@ -414,13 +410,6 @@ def compute_paths(img, settings, derivative):
 
 def process_img_tag(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
-    if not is_img_identifiable(path.source):
-        logger.warning(
-            "%s Skipping image %s that could not be identified by Pillow",
-            LOG_PREFIX,
-            path.source,
-        )
-        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
@@ -432,23 +421,8 @@ def process_img_tag(img, settings, derivative):
     process_image((path.source, destination, process), settings)
 
 
-def is_img_identifiable(img_filepath):
-    try:
-        Image.open(img_filepath)
-        return True  # noqa: TRY300
-    except (FileNotFoundError, UnidentifiedImageError):
-        return False
-
-
 def build_srcset(img, settings, derivative):
     path = compute_paths(img, settings, derivative)
-    if not is_img_identifiable(path.source):
-        logger.warning(
-            "%s Skipping image %s that could not be identified by Pillow",
-            LOG_PREFIX,
-            path.source,
-        )
-        return
     process = settings["IMAGE_PROCESS"][derivative]
 
     default = process["default"]
@@ -694,16 +668,27 @@ def process_picture(soup, img, group, settings, derivative):
             img.insert_before(s["element"])
 
 
+def try_open_image(path):
+    try:
+        i = Image.open(path)
+    except UnidentifiedImageError:
+        logger.warning(
+            f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.'
+        )
+        raise
+    except FileNotFoundError:
+        logger.warning(f'{LOG_PREFIX} Source image "{path}" not found.')
+        raise
+
+    return i
+
+
 def process_image(image, settings):
     # remove URL encoding to get to physical filenames
     image = list(image)
     image[0] = unquote(image[0])
     image[1] = unquote(image[1])
     # image[2] is the transformation
-
-    logger.debug(f"{LOG_PREFIX} {image[0]} -> {image[1]}")
-
-    os.makedirs(os.path.dirname(image[1]), exist_ok=True)
 
     # If original image is older than existing derivative, skip
     # processing to save time, unless user explicitly forced
@@ -713,7 +698,12 @@ def process_image(image, settings):
         or not os.path.exists(image[1])
         or os.path.getmtime(image[0]) > os.path.getmtime(image[1])
     ):
-        i = Image.open(image[0])
+        logger.debug(f"{LOG_PREFIX} Processing {image[0]} -> {image[1]}")
+
+        try:
+            i = try_open_image(image[0])
+        except (UnidentifiedImageError, FileNotFoundError):
+            return
 
         for step in image[2]:
             if callable(step):
@@ -722,12 +712,16 @@ def process_image(image, settings):
                 elems = step.split(" ")
                 i = basic_ops[elems[0]](i, *(elems[1:]))
 
+        os.makedirs(os.path.dirname(image[1]), exist_ok=True)
+
         # `save_all=True`  will allow saving multi-page (aka animated) GIF's
         # however, turning it on seems to break PNG support, and doesn't seem
         # to work on GIF's either...
         i.save(image[1], progressive=True)
 
         ExifTool.copy_tags(image[0], image[1])
+    else:
+        logger.debug(f"{LOG_PREFIX} Skipping {image[0]} -> {image[1]}")
 
 
 def dump_config(pelican):

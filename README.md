@@ -504,6 +504,43 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 [existing issues]: https://github.com/pelican-plugins/image-process/issues
 [Contributing to Pelican]: https://docs.getpelican.com/en/latest/contribute.html
 
+### Updating the Changelog
+
+The Changelog will be updated if you include a `RELEASE.md` file in your pull
+request. (Note the file is unlikely to already exist, so please feel free to
+create it.) This is a standard Markdown file, and so you can add Markdown as
+needed to concisely describe your changes.
+
+When a release is cut, the contents of the `RELEASE.md` file will be added to
+the Changelog and used to create Release Notes for the GitHub release.
+
+### Cutting a Release
+
+As part of your pull request, if you include a `Release type` line at the top
+of your `RELEASE.md`, when your pull request is merged, a release will
+automatically be generated! This is the form:
+
+```md
+Release type: patch
+
+[details of changes]
+```
+
+Valid release types are: `major`, `minor`, or `patch`. Generally, we try and
+follow Semantic Versioning, which means:
+
+- a **patch** (or bugfix) release is one that fixes a bug in the project, but
+  doesn't add features or require users to make any configuration changes.
+- a **minor** (or feature) release is one that add new features or
+  configuration options to the project. It may also include bugfixes.
+- a **major** or ("breaking") release is one that changes how the end-user
+  interacts with the plugin, in a non-backwards compatible way. Maybe a
+  configuration option is changed, or the support for an old version of Python
+  is dropped.
+
+Please do not be afraid to cut a release. In general, I'm happy with many small
+releases if it gets features and fixes in front of users quickly.
+
 ### Regenerating Test Images
 
 If you need to regenerate the transformed images used by the test suite, there

@@ -318,8 +318,9 @@ def harvest_images_in_fragment(fragment, settings):
                 add_class = settings.get("IMAGE_PROCESS_ADD_CLASS", True)
                 if not add_class:
                     # Remove class if it's the only one, otherwise remove specific entry
-                    img_classes = img["class"]
-                    img_classes.remove(c) if len(img_classes) > 1 else img.pop("class")
+                    img["class"].remove(c)
+                    if len(img["class"]) == 0:
+                        del img["class"]
                 else:
                     class_prefix = settings.get(
                         "IMAGE_PROCESS_CLASS_PREFIX", "image-process-"

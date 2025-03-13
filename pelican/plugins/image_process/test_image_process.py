@@ -634,6 +634,60 @@ def test_try_open_image():
         assert not try_open_image(path.source)
 
 
+@pytest.mark.parametrize(
+    "orig_tag, new_tag, setting_overrides",
+    [
+        (
+            '<img class="image-process-crop" src="/tmp/test.jpg" />',
+            '<img class="image-process-crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            [  # Default settings.
+                {},
+                {"IMAGE_PROCESS_ADD_CLASS": True},
+                {"IMAGE_PROCESS_CLASS_PREFIX": "image-process-"},
+                {
+                    "IMAGE_PROCESS_ADD_CLASS": True,
+                    "IMAGE_PROCESS_CLASS_PREFIX": "image-process-",
+                },
+            ],
+        ),
+        (
+            '<img class="image-process-crop" src="/tmp/test.jpg" />',
+            '<img class="custom-prefix-crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            [  # Custom class prefix.
+                {"IMAGE_PROCESS_CLASS_PREFIX": "custom-prefix-"},
+                {
+                    "IMAGE_PROCESS_ADD_CLASS": True,
+                    "IMAGE_PROCESS_CLASS_PREFIX": "custom-prefix-",
+                },
+            ],
+        ),
+        (
+            '<img class="image-process-crop" src="/tmp/test.jpg" />',
+            '<img class="crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            [  # Special case: empty string as class prefix.
+                {"IMAGE_PROCESS_CLASS_PREFIX": ""},
+            ],
+        ),
+        (
+            '<img class="image-process-crop" src="/tmp/test.jpg" />',
+            '<img src="/tmp/derivatives/crop/test.jpg"/>',
+            [  # No class added.
+                {"IMAGE_PROCESS_ADD_CLASS": False},
+                {"IMAGE_PROCESS_ADD_CLASS": False, "IMAGE_PROCESS_CLASS_PREFIX": ""},
+            ],
+        ),
+    ],
+)
+def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
+    """Test the IMAGE_PROCESS_ADD_CLASS and IMAGE_PROCESS_CLASS_PREFIX settings."""
+    # Silence image transforms.
+    mocker.patch("pelican.plugins.image_process.image_process.process_image")
+
+    for override in setting_overrides:
+        settings = get_settings(**override)
+        assert harvest_images_in_fragment(orig_tag, settings) == new_tag
+
+
 def generate_test_images():
     settings = get_settings()
     image_count = 0

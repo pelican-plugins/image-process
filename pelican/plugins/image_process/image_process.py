@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib
 from urllib.parse import unquote, urlparse
 from urllib.request import pathname2url, url2pathname
 
@@ -362,7 +363,7 @@ def compute_paths(img, settings, derivative):
     derivative_path = os.path.join(process_dir, derivative)
     # urljoin truncates leading ../ elements
     base_url = posixpath.join(
-        posixpath.dirname(img["src"]), pathname2url(derivative_path)
+        posixpath.dirname(img["src"]), pathname2url(str(derivative_path))
     )
 
     PELICAN_V4 = 4
@@ -397,7 +398,7 @@ def compute_paths(img, settings, derivative):
             src_path = img_src_path.lstrip("/")
         source = os.path.join(settings["PATH"], src_path)
         base_path = os.path.join(
-            settings["OUTPUT_PATH"], os.path.dirname(src_path), derivative_path
+            settings["OUTPUT_PATH"], os.path.dirname(src_path), str(derivative_path)
         )
 
     return Path(base_url, source, base_path, filename)
@@ -408,12 +409,20 @@ def process_img_tag(img, settings, derivative):
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
-    destination = os.path.join(path.base_path, path.filename)
+    destination = os.path.join(str(path.base_path), path.filename)
 
     if not isinstance(process, list):
         process = process["ops"]
 
     process_image((path.source, destination, process), settings)
+
+
+def format_srcset_element(path, condition):
+    # space and comma have special meaning in srcset
+    if " " in path or "," in path:
+        path = urllib.parse.quote(path)
+
+    return f"{path} {condition}"
 
 
 def build_srcset(img, settings, derivative):
@@ -434,7 +443,7 @@ def build_srcset(img, settings, derivative):
         default_name = default
     elif isinstance(default, list):
         default_name = "default"
-        destination = os.path.join(path.base_path, default_name, path.filename)
+        destination = os.path.join(str(path.base_path), default_name, path.filename)
         process_image((path.source, destination, default), settings)
 
     img["src"] = posixpath.join(path.base_url, default_name, path.filename)
@@ -445,8 +454,8 @@ def build_srcset(img, settings, derivative):
     srcset = []
     for src in process["srcset"]:
         file_path = posixpath.join(path.base_url, src[0], path.filename)
-        srcset.append(f"{file_path} {src[0]}")
-        destination = os.path.join(path.base_path, src[0], path.filename)
+        srcset.append(format_srcset_element(file_path, src[0]))
+        destination = os.path.join(str(path.base_path), src[0], path.filename)
         process_image((path.source, destination, src[1]), settings)
 
     if len(srcset) > 0:
@@ -532,12 +541,8 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         srcset = []
         for src in s["srcset"]:
-            srcset.append(
-                "{} {}".format(
-                    os.path.join(s["base_url"], s["name"], src[0], s["filename"]),
-                    src[0],
-                )
-            )
+            url = os.path.join(s["base_url"], s["name"], src[0], s["filename"])
+            srcset.append(format_srcset_element(str(url), src[0]))
 
             source = os.path.join(settings["PATH"], s["url"][1:])
             destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
@@ -644,12 +649,8 @@ def process_picture(soup, img, group, settings, derivative):
     for s in sources:
         srcset = []
         for src in s["srcset"]:
-            srcset.append(
-                "{} {}".format(
-                    posixpath.join(s["base_url"], s["name"], src[0], s["filename"]),
-                    src[0],
-                )
-            )
+            url = posixpath.join(s["base_url"], s["name"], src[0], s["filename"])
+            srcset.append(format_srcset_element(str(url), src[0]))
 
             source = os.path.join(settings["PATH"], s["url"][1:])
             destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])

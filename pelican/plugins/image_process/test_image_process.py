@@ -499,7 +499,8 @@ COMPLEX_TRANSFORMS = {
         ),
     ],
 )
-def test_picture_generation(mocker, orig_tag, new_tag, call_args):
+def test_html_and_pictures_generation(mocker, orig_tag, new_tag, call_args):
+    """Tests that the generated html is as expected and the images are processed."""
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
 
     settings = get_settings(
@@ -508,6 +509,8 @@ def test_picture_generation(mocker, orig_tag, new_tag, call_args):
 
     assert harvest_images_in_fragment(orig_tag, settings) == new_tag
 
+    # Check that process_image was called with the expected arguments
+    # and in the expecter order.
     for i, (orig_img, new_img, transform_params) in enumerate(call_args):
         assert process.mock_calls[i] == mocker.call(
             (
@@ -517,6 +520,140 @@ def test_picture_generation(mocker, orig_tag, new_tag, call_args):
             ),
             settings,
         )
+
+
+@pytest.mark.parametrize(
+    "orig_tag, new_tag",
+    [
+        # <img/> src attribute with no quotes, spaces or commas.
+        (
+            '<img class="image-process-thumb" src="/tmp/my&amp;_dir/my!_test.jpg" />',
+            '<img class="image-process-thumb" '
+            'src="/tmp/my&amp;_dir/derivs/thumb/my!_test.jpg"/>',
+        ),
+        # <img/> src attribute with double quotes, spaces and commas.
+        (
+            '<img class="image-process-thumb" '
+            'src="/tmp/my,&quot; dir/my &#34;test,.jpg" />',
+            '<img class="image-process-thumb" '
+            "src='/tmp/my,\" dir/derivs/thumb/my \"test,.jpg'/>",
+        ),
+        # <img/> src attribute with single and double quotes, spaces and commas.
+        (
+            '<img class="image-process-thumb" '
+            'src="/tmp/m\'y,&quot; dir/my &#34;test,.jpg" />',
+            '<img class="image-process-thumb" '
+            'src="/tmp/m\'y,&quot; dir/derivs/thumb/my &quot;test,.jpg"/>',
+        ),
+        # <img/> srcset attribute with no quotes, spaces or commas.
+        (
+            '<img class="image-process-crisp" src="/tmp/my&amp;_dir/my!_test.jpg" />',
+            '<img class="image-process-crisp" '
+            'src="/tmp/my&amp;_dir/derivs/crisp/1x/my!_test.jpg" '
+            'srcset="/tmp/my&amp;_dir/derivs/crisp/1x/my!_test.jpg 1x, '
+            "/tmp/my&amp;_dir/derivs/crisp/2x/my!_test.jpg 2x, "
+            '/tmp/my&amp;_dir/derivs/crisp/4x/my!_test.jpg 4x"/>',
+        ),
+        # <img/> srcset attribute with double quotes, spaces and commas.
+        (
+            '<img class="image-process-crisp" '
+            'src="/tmp/my,&quot; dir/my &#34;test,.jpg" />',
+            '<img class="image-process-crisp" '
+            "src='/tmp/my,\" dir/derivs/crisp/1x/my \"test,.jpg' "
+            'srcset="/tmp/my%2C%22%20dir/derivs/crisp/1x/my%20%22test%2C.jpg 1x, '
+            "/tmp/my%2C%22%20dir/derivs/crisp/2x/my%20%22test%2C.jpg 2x, "
+            '/tmp/my%2C%22%20dir/derivs/crisp/4x/my%20%22test%2C.jpg 4x"/>',
+        ),
+        # <img/> srcset attribute with single and double quotes, spaces and commas.
+        (
+            '<img class="image-process-crisp" '
+            'src="/tmp/m\'y,&quot; dir/my &#34;test,.jpg" />',
+            '<img class="image-process-crisp" '
+            'src="/tmp/m\'y,&quot; dir/derivs/crisp/1x/my &quot;test,.jpg" '
+            'srcset="/tmp/m%27y%2C%22%20dir/derivs/crisp/1x/my%20%22test%2C.jpg 1x, '
+            "/tmp/m%27y%2C%22%20dir/derivs/crisp/2x/my%20%22test%2C.jpg 2x, "
+            '/tmp/m%27y%2C%22%20dir/derivs/crisp/4x/my%20%22test%2C.jpg 4x"/>',
+        ),
+        # <picture/> src and srcset attributes with no quotes, spaces or commas.
+        (
+            '<picture><source class="source-1" '
+            'src="/my&amp;_dir/my!_pelican-closeup.jpg"/><img '
+            'class="image-process-pict" src="/my&amp;_dir/my!_pelican.jpg"/>'
+            "</picture>",
+            '<picture><source media="(min-width: 640px)" sizes="100vw" '
+            'srcset="/my&amp;_dir/derivs/pict/default/640w/'
+            "my!_pelican.jpg 640w, "
+            "/my&amp;_dir/derivs/pict/default/1024w/my!_pelican.jpg 1024w, "
+            '/my&amp;_dir/derivs/pict/default/1600w/my!_pelican.jpg 1600w"/>'
+            '<source srcset="/my&amp;_dir/derivs/pict/source-1/1x/'
+            "my!_pelican-closeup.jpg 1x, "
+            "/my&amp;_dir/derivs/pict/source-1/2x/"
+            'my!_pelican-closeup.jpg 2x"/><img '
+            'class="image-process-pict" '
+            'src="/my&amp;_dir/derivs/pict/default/640w/my!_pelican.jpg"/>'
+            "</picture>",
+        ),
+        # <picture/> src and srcset attributes with double quotes, spaces and commas.
+        (
+            '<picture><source class="source-1" '
+            'src="/my,&quot; dir/my &#34;pelican-closeup,.jpg"/><img '
+            'class="image-process-pict" src="/my,&quot; dir/my &#34;pelican,.jpg"/>'
+            "</picture>",
+            '<picture><source media="(min-width: 640px)" sizes="100vw" '
+            'srcset="/my%2C%22%20dir/derivs/pict/default/640w/'
+            "my%20%22pelican%2C.jpg 640w, "
+            "/my%2C%22%20dir/derivs/pict/default/1024w/my%20%22pelican%2C.jpg 1024w, "
+            '/my%2C%22%20dir/derivs/pict/default/1600w/my%20%22pelican%2C.jpg 1600w"/>'
+            '<source srcset="/my%2C%22%20dir/derivs/pict/source-1/1x/'
+            "my%20%22pelican-closeup%2C.jpg 1x, "
+            "/my%2C%22%20dir/derivs/pict/source-1/2x/"
+            'my%20%22pelican-closeup%2C.jpg 2x"/><img '
+            'class="image-process-pict" '
+            "src='/my,\" dir/derivs/pict/default/640w/my \"pelican,.jpg'/>"
+            "</picture>",
+        ),
+        # <picture/> src and srcset attributes
+        # with single and double quotes, spaces and commas.
+        (
+            '<picture><source class="source-1" '
+            'src="/m\'y,&quot; dir/my &#34;pelican-closeup,.jpg"/><img '
+            'class="image-process-pict" src="/m\'y,&quot; dir/my &#34;pelican,.jpg"/>'
+            "</picture>",
+            '<picture><source media="(min-width: 640px)" sizes="100vw" '
+            'srcset="/m%27y%2C%22%20dir/derivs/pict/default/640w/'
+            "my%20%22pelican%2C.jpg 640w, "
+            "/m%27y%2C%22%20dir/derivs/pict/default/1024w/"
+            "my%20%22pelican%2C.jpg 1024w, "
+            "/m%27y%2C%22%20dir/derivs/pict/default/1600w/"
+            'my%20%22pelican%2C.jpg 1600w"/>'
+            '<source srcset="/m%27y%2C%22%20dir/derivs/pict/source-1/1x/'
+            "my%20%22pelican-closeup%2C.jpg 1x, "
+            "/m%27y%2C%22%20dir/derivs/pict/source-1/2x/"
+            'my%20%22pelican-closeup%2C.jpg 2x"/><img '
+            'class="image-process-pict" '
+            'src="/m\'y,&quot; dir/derivs/pict/default/640w/my &quot;pelican,.jpg"/>'
+            "</picture>",
+        ),
+    ],
+)
+def test_special_chars_in_image_path_are_handled_properly(mocker, orig_tag, new_tag):
+    """Tests that special characters in image paths are handled properly.
+
+    For the src attribute, single or double quotes may need to be escaped,
+    according to the quotation mark used to enclose the attribute value.
+
+    For the srcset attribute, in addition to quotes, spaces and commas
+    need to be url-encoded.
+
+    Related to issue #78 https://github.com/pelican-plugins/image-process/issues/78
+    """
+    mocker.patch("pelican.plugins.image_process.image_process.process_image")
+
+    settings = get_settings(
+        IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"
+    )
+
+    assert harvest_images_in_fragment(orig_tag, settings) == new_tag
 
 
 def process_image_mock_exif_tool_started(image, settings):

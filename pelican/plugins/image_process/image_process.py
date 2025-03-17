@@ -288,7 +288,7 @@ def harvest_feed_images(path, context, feed):
     set_default_settings(context)
 
     with open(path, "r+", encoding=context["IMAGE_PROCESS_ENCODING"]) as f:
-        soup = BeautifulSoup(f, "xml")
+        soup = BeautifulSoup(f, "xml", preserve_whitespace_tags={"rss", "feed"})
 
         for content in soup.find_all("content"):
             if content["type"] != "html" or not content.string:
@@ -304,7 +304,7 @@ def harvest_feed_images(path, context, feed):
 
 def harvest_images_in_fragment(fragment, settings):
     parser = settings.get("IMAGE_PROCESS_PARSER", "html.parser")
-    soup = BeautifulSoup(fragment, parser)
+    soup = BeautifulSoup(fragment, parser, preserve_whitespace_tags={"html"})
 
     copy_exif_tags = settings.get("IMAGE_PROCESS_COPY_EXIF_TAGS", False)
     if copy_exif_tags:

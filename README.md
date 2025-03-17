@@ -504,6 +504,46 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 [existing issues]: https://github.com/pelican-plugins/image-process/issues
 [Contributing to Pelican]: https://docs.getpelican.com/en/latest/contribute.html
 
+### Documenting Changes for Releases
+
+When you include a `RELEASE.md` file in your pull request, we use
+[AutoPub](https://justinmayer.com/projects/autopub/) to automatically update
+the changelog and issue a new plugin release when your pull request is merged.
+This `RELEASE.md` file is automatically deleted during the release process, so
+it should not persistently exist in the repository, and thus you should create
+it in the project root. This is a standard Markdown file, so you can add
+Markdown as needed to concisely describe your changes.
+
+When a release is issued, the description in the `RELEASE.md` file will be added to
+the changelog and used to create release notes for the GitHub release.
+
+You must specify a `Release type` line at the top of your `RELEASE.md`, which
+is used to determine how to increment the release version number. It is
+therefore important that you do not manually increment the version number in
+the `pyproject.toml` file, as that will be handled automatically.
+
+The format of a `RELEASE.md` file is therefore:
+
+```md
+Release type: patch
+
+[details of changes]
+```
+
+Valid release types are: `patch`, `minor`, or `major`. Generally, we try and
+follow [Semantic Versioning](https://semver.org/), which means:
+
+- a **patch** (or bug-fix) release is one that fixes a bug in the project, but
+  does not add features or require users to make any configuration changes.
+- a **minor** (or feature) release is one that adds new features or
+  configuration options to the project. It may also include bug fixes.
+- a **major** (or “breaking”) release is one that changes how the end user
+  interacts with the plugin, in a non-backwards-compatible way.
+
+Generally speaking, the idea is to “ship early and often”. We therefore do not
+hesitate to issue releases, even if they are small, so that we can ship new
+features and fixes to users in a timely fashion.
+
 ### Regenerating Test Images
 
 If you need to regenerate the transformed images used by the test suite, there

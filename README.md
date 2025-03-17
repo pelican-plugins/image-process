@@ -572,7 +572,7 @@ features and fixes to users in a timely fashion.
 If you need to regenerate the transformed images used by the test suite, there
 is a helper function to do this for you. From the Python REPL:
 
-```pycon
+```python
 >>> from pelican.plugins.image_process.test_image_process import generate_test_images
 >>> generate_test_images()
 36 test images generated!
@@ -582,7 +582,7 @@ is a helper function to do this for you. From the Python REPL:
 
 This project is licensed under the [AGPL-3.0 license](http://www.gnu.org/licenses/agpl-3.0.html).
 
-[Pelican image](https://web.archive.org/web/20090505115626/http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726) in test data by Jon Sullivan. Published under a [Creative Commons Public Domain license](https://creativecommons.org/licenses/publicdomain/).
+The [pelican image](https://web.archive.org/web/20090505115626/http://www.pdphoto.org/PictureDetail.php?mat=&pg=5726) in the test data is by Jon Sullivan, published under a [Creative Commons Public Domain license](https://creativecommons.org/licenses/publicdomain/).
 
 [HTML5 responsive images]: https://www.smashingmagazine.com/2014/05/14/responsive-images-done-right-guide-picture-srcset/
 [BeautifulSoup documentation on parsers]: https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser

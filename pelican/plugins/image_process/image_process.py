@@ -75,7 +75,7 @@ class ExifTool:
             with contextlib.suppress(LookupError):
                 codecs.lookup_error("surrogateescape")
 
-        with open(os.devnull, "w") as devnull:
+        with open(os.devnull, "w"):
             self.process = subprocess.Popen(
                 [
                     "exiftool",
@@ -89,7 +89,7 @@ class ExifTool:
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=devnull,
+                stderr=subprocess.STDOUT,
             )
 
     def __del__(self):
@@ -101,7 +101,20 @@ class ExifTool:
         params = (
             b"-TagsFromFile",
             src.encode(self.encoding, ExifTool.errors),
-            b'"-all:all>all:all"',
+            dst.encode(self.encoding, ExifTool.errors),
+        )
+        self._send_command(params)
+        params = (
+            b"-ExifImageWidth<ImageWidth",
+            b"-if",
+            b'"$ExifImageWidth"',
+            dst.encode(self.encoding, ExifTool.errors),
+        )
+        self._send_command(params)
+        params = (
+            b"-ExifImageHeight<ImageHeight",
+            b"-if",
+            b'"$ExifImageHeight"',
             dst.encode(self.encoding, ExifTool.errors),
         )
         self._send_command(params)
@@ -109,13 +122,19 @@ class ExifTool:
         self._send_command(params)
 
     def _send_command(self, params):
-        self.process.stdin.write(b"\n".join((*params, b"-j\n", b"-execute\n")))
+        joined_params = b"\n".join((*params, b"-j\n", b"-execute\n"))
+        self.process.stdin.write(joined_params)
         self.process.stdin.flush()
+
         output = b""
         fd = self.process.stdout.fileno()
         while not output.strip().endswith(ExifTool.sentinel):
             output += os.read(fd, ExifTool.block_size)
         exiftool_result = output.strip()[: -len(ExifTool.sentinel)]
+
+        logger.debug(
+            "{} exiftool command: {}".format(LOG_PREFIX, joined_params.decode("utf-8"))
+        )
         logger.debug(
             "{} exiftool result: {}".format(LOG_PREFIX, exiftool_result.decode("utf-8"))
         )

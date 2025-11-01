@@ -41,6 +41,10 @@ EXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("exif", f"pelican-bird.{ext}").resolve()
     for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
+NOEXIF_TEST_IMAGES = [
+    TEST_DATA.joinpath("noexif", f"pelican-bird.{ext}").resolve()
+    for ext in SUPPORTED_EXIF_IMAGE_FORMATS
+]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
@@ -708,20 +712,20 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
         return
 
     # A few EXIF tags to test for.
-    exif_tags = [
-        "Artist",
-        "Creator",
-        "Title",
-        "Description",
-        "Subject",
-        "Rating",
+    exif_tags = ["Artist", "Creator", "Title", "Description", "Subject", "Rating"]
+
+    size_tags = [
         "ExifImageWidth",
+        "ExifImageHeight",
+        "ImageWidth",
+        "ImageHeight",
     ]
 
     settings = get_settings(IMAGE_PROCESS_COPY_EXIF_TAGS=copy_tags)
 
-    transform_id = "grayscale"
-    transform_params = ["grayscale"]
+    # Use a transform that changes image dimensions.
+    transform_id = "scale_in"
+    transform_params = ["scale_in 200 250 False"]
     image_name = image_path.name
     destination_path = tmp_path.joinpath(transform_id, image_name)
 
@@ -729,8 +733,13 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
         ["exiftool", "-json", image_path], stdout=subprocess.PIPE, check=False
     )
     expected_tags = json.loads(expected_results.stdout)[0]
-    for tag in exif_tags:
+    for tag in exif_tags + size_tags:
         assert tag in expected_tags
+
+    assert "ExifImageWidth" in expected_tags
+    assert "ExifImageHeight" in expected_tags
+    assert expected_tags["ExifImageWidth"] == expected_tags["ImageWidth"]
+    assert expected_tags["ExifImageHeight"] == expected_tags["ImageHeight"]
 
     if copy_tags:
         ExifTool.start_exiftool()
@@ -745,12 +754,68 @@ def test_copy_exif_tags(tmp_path, image_path, copy_tags):
     assert actual_results.returncode == 0
 
     actual_tags = json.loads(actual_results.stdout)[0]
-    for tag in exif_tags:
+    for tag in exif_tags + size_tags:
         if copy_tags:
             assert tag in actual_tags
-            assert expected_tags[tag] == actual_tags[tag]
         else:
-            assert tag not in actual_tags
+            assert tag in {"ImageWidth", "ImageHeight"} or tag not in actual_tags
+
+    if copy_tags:
+        for tag in exif_tags:
+            assert expected_tags[tag] == actual_tags[tag]
+
+        # Dimensions should differ due to the transform.
+        assert expected_tags["ExifImageWidth"] != actual_tags["ExifImageWidth"]
+        assert expected_tags["ImageWidth"] != actual_tags["ImageWidth"]
+        assert expected_tags["ExifImageHeight"] != actual_tags["ExifImageHeight"]
+        assert expected_tags["ImageHeight"] != actual_tags["ImageHeight"]
+
+        # Check that the exif size tags are equal in the real size tags.
+        assert actual_tags["ExifImageWidth"] == actual_tags["ImageWidth"]
+        assert actual_tags["ExifImageHeight"] == actual_tags["ImageHeight"]
+
+
+@pytest.mark.parametrize("image_path", NOEXIF_TEST_IMAGES)
+def test_copy_exif_tags_does_not_add_exif_dims_tags(tmp_path, image_path):
+    if shutil.which("exiftool") is None:
+        warnings.warn(
+            "EXIF tags copying will not be tested because the exiftool program could "
+            "not be found. Please install exiftool and make sure it is in your path.",
+            stacklevel=2,
+        )
+        return
+
+    settings = get_settings(IMAGE_PROCESS_COPY_EXIF_TAGS=True)
+
+    transform_id = "scale_in"
+    transform_params = ["scale_in 200 250 False"]
+    image_name = image_path.name
+    destination_path = tmp_path.joinpath(transform_id, image_name)
+
+    expected_results = subprocess.run(
+        ["exiftool", "-json", image_path], stdout=subprocess.PIPE, check=False
+    )
+    expected_tags = json.loads(expected_results.stdout)[0]
+
+    # We want to verify that dimension tags are not added
+    # if they are not initially present.
+    assert "ExifImageWidth" not in expected_tags
+    assert "ExifImageHeight" not in expected_tags
+
+    ExifTool.start_exiftool()
+    process_image((str(image_path), str(destination_path), transform_params), settings)
+    ExifTool.stop_exiftool()
+
+    actual_results = subprocess.run(
+        ["exiftool", "-json", destination_path], stdout=subprocess.PIPE, check=False
+    )
+
+    assert actual_results.returncode == 0
+
+    actual_tags = json.loads(actual_results.stdout)[0]
+
+    assert "ExifImageWidth" not in actual_tags
+    assert "ExifImageHeight" not in actual_tags
 
 
 def test_try_open_image():

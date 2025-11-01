@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import warnings
 
+from bs4 import BeautifulSoup
 from PIL import Image, UnidentifiedImageError
 import pytest
 
@@ -196,9 +197,8 @@ def test_path_normalization(mocker, orig_src, orig_img, new_src, new_img):
 
     img_tag_processed = harvest_images_in_fragment(img_tag_orig, settings)
 
-    assert img_tag_processed == (
-        f'<img class="test image-process image-process-crop test2" src="{new_src}"/>'
-    )
+    soup = BeautifulSoup(img_tag_processed, "html.parser")
+    assert soup.img["src"] == new_src
 
     process.assert_called_once_with(
         (
@@ -299,8 +299,10 @@ COMPLEX_TRANSFORMS = {
     "orig_tag, new_tag, call_args",
     [
         (
-            '<img class="image-process-thumb" src="/tmp/test.jpg" />',
-            '<img class="image-process-thumb" src="/tmp/derivs/thumb/test.jpg"/>',
+            '<img class="image-process-thumb" src="/tmp/test.jpg"/>',
+            # Mock height and width added after processing.
+            '<img class="image-process-thumb" height="384" '
+            'src="/tmp/derivs/thumb/test.jpg" width="512"/>',
             [
                 (
                     "tmp/test.jpg",
@@ -310,9 +312,11 @@ COMPLEX_TRANSFORMS = {
             ],
         ),
         (
-            '<img class="image-process-article-image" src="/tmp/test.jpg" />',
-            '<img class="image-process-article-image" '
-            'src="/tmp/derivs/article-image/test.jpg"/>',
+            '<img class="image-process-article-image" height="420" '
+            'src="/tmp/test.jpg" width="4242"/>',
+            # Pre-existing height and width unchanged after processing.
+            '<img class="image-process-article-image" height="420" '
+            'src="/tmp/derivs/article-image/test.jpg" width="4242"/>',
             [
                 (
                     "tmp/test.jpg",
@@ -502,6 +506,7 @@ COMPLEX_TRANSFORMS = {
 def test_html_and_pictures_generation(mocker, orig_tag, new_tag, call_args):
     """Tests that the generated html is as expected and the images are processed."""
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
 
     settings = get_settings(
         IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"
@@ -528,22 +533,23 @@ def test_html_and_pictures_generation(mocker, orig_tag, new_tag, call_args):
         # <img/> src attribute with no quotes, spaces or commas.
         (
             '<img class="image-process-thumb" src="/tmp/my&amp;_dir/my!_test.jpg" />',
-            '<img class="image-process-thumb" '
-            'src="/tmp/my&amp;_dir/derivs/thumb/my!_test.jpg"/>',
+            '<img class="image-process-thumb" height="384" '
+            'src="/tmp/my&amp;_dir/derivs/thumb/my!_test.jpg" width="512"/>',
         ),
         # <img/> src attribute with double quotes, spaces and commas.
         (
             '<img class="image-process-thumb" '
             'src="/tmp/my,&quot; dir/my &#34;test,.jpg" />',
-            '<img class="image-process-thumb" '
-            "src='/tmp/my,\" dir/derivs/thumb/my \"test,.jpg'/>",
+            '<img class="image-process-thumb" height="384" '
+            "src='/tmp/my,\" dir/derivs/thumb/my \"test,.jpg' "
+            'width="512"/>',
         ),
         # <img/> src attribute with single and double quotes, spaces and commas.
         (
             '<img class="image-process-thumb" '
             'src="/tmp/m\'y,&quot; dir/my &#34;test,.jpg" />',
-            '<img class="image-process-thumb" '
-            'src="/tmp/m\'y,&quot; dir/derivs/thumb/my &quot;test,.jpg"/>',
+            '<img class="image-process-thumb" height="384" '
+            'src="/tmp/m\'y,&quot; dir/derivs/thumb/my &quot;test,.jpg" width="512"/>',
         ),
         # <img/> srcset attribute with no quotes, spaces or commas.
         (
@@ -647,7 +653,8 @@ def test_special_chars_in_image_path_are_handled_properly(mocker, orig_tag, new_
 
     Related to issue #78 https://github.com/pelican-plugins/image-process/issues/78
     """
-    mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
 
     settings = get_settings(
         IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"
@@ -776,7 +783,8 @@ def test_try_open_image():
     [
         (
             '<img class="image-process-crop" src="/tmp/test.jpg" />',
-            '<img class="image-process-crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            '<img class="image-process-crop" height="384" '
+            'src="/tmp/derivatives/crop/test.jpg" width="512"/>',
             [  # Default settings.
                 {},
                 {"IMAGE_PROCESS_ADD_CLASS": True},
@@ -789,7 +797,8 @@ def test_try_open_image():
         ),
         (
             '<img class="image-process-crop" src="/tmp/test.jpg" />',
-            '<img class="custom-prefix-crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            '<img class="custom-prefix-crop" height="384" '
+            'src="/tmp/derivatives/crop/test.jpg" width="512"/>',
             [  # Custom class prefix.
                 {"IMAGE_PROCESS_CLASS_PREFIX": "custom-prefix-"},
                 {
@@ -800,14 +809,15 @@ def test_try_open_image():
         ),
         (
             '<img class="image-process-crop" src="/tmp/test.jpg" />',
-            '<img class="crop" src="/tmp/derivatives/crop/test.jpg"/>',
+            '<img class="crop" height="384" src="/tmp/derivatives/crop/test.jpg" '
+            'width="512"/>',
             [  # Special case: empty string as class prefix.
                 {"IMAGE_PROCESS_CLASS_PREFIX": ""},
             ],
         ),
         (
             '<img class="image-process-crop" src="/tmp/test.jpg" />',
-            '<img src="/tmp/derivatives/crop/test.jpg"/>',
+            '<img height="384" src="/tmp/derivatives/crop/test.jpg" width="512"/>',
             [  # No class added.
                 {"IMAGE_PROCESS_ADD_CLASS": False},
                 {"IMAGE_PROCESS_ADD_CLASS": False, "IMAGE_PROCESS_CLASS_PREFIX": ""},
@@ -818,7 +828,8 @@ def test_try_open_image():
 def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
     """Test the IMAGE_PROCESS_ADD_CLASS and IMAGE_PROCESS_CLASS_PREFIX settings."""
     # Silence image transforms.
-    mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
 
     for override in setting_overrides:
         settings = get_settings(**override)

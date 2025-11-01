@@ -448,7 +448,12 @@ def process_img_tag(img, settings, derivative):
     if not isinstance(process, list):
         process = process["ops"]
 
-    process_image((path.source, destination, process), settings)
+    image_size = process_image((path.source, destination, process), settings)
+    if image_size:
+        if "width" not in img.attrs:
+            img["width"] = image_size[0]
+        if "height" not in img.attrs:
+            img["height"] = image_size[1]
 
 
 def format_srcset_element(path, condition):
@@ -733,7 +738,7 @@ def process_image(image, settings):
         try:
             i = try_open_image(image[0])
         except (UnidentifiedImageError, FileNotFoundError):
-            return
+            return None
 
         for step in image[2]:
             if callable(step):
@@ -750,8 +755,11 @@ def process_image(image, settings):
         i.save(image[1], progressive=True)
 
         ExifTool.copy_tags(image[0], image[1])
-    else:
-        logger.debug(f"{LOG_PREFIX} Skipping {image[0]} -> {image[1]}")
+        return i.width, i.height
+
+    logger.debug(f"{LOG_PREFIX} Skipping {image[0]} -> {image[1]}")
+    i = Image.open(image[1])
+    return i.width, i.height
 
 
 def dump_config(pelican):

@@ -490,6 +490,9 @@ IMAGE_PROCESS_COPY_EXIF_TAGS = True
 Note that `exiftool` prior to version 12.46 cannot write WebP images, so if you work
 with WebP images, you should use version 12.46 or later.
 
+When copying EXIF tags, the plugin will update `ExifImageWidth` and
+`ExifImageHeight` tags to reflect the dimensions of the transformed image.
+
 #### Modifying the `class` Attribute of Processed Images
 
 By default, *Image Process* adds the `image-process-<transform>`
@@ -520,9 +523,12 @@ IMAGE_PROCESS_ADD_CLASS = False
 
 ## Contributing
 
-Contributions are welcome and much appreciated. Every little bit helps. You can contribute by improving the documentation, adding missing features, and fixing bugs. You can also help out by reviewing and commenting on [existing issues][].
+Contributions are welcome and much appreciated. Every little bit helps. You can
+contribute by improving the documentation, adding missing features, and fixing bugs.
+You can also help out by reviewing and commenting on [existing issues][].
 
-To start contributing to this plugin, review the [Contributing to Pelican][] documentation, beginning with the **Contributing Code** section.
+To start contributing to this plugin, review the [Contributing to Pelican][]
+documentation, beginning with the **Contributing Code** section.
 
 [existing issues]: https://github.com/pelican-plugins/image-process/issues
 [Contributing to Pelican]: https://docs.getpelican.com/en/latest/contribute.html

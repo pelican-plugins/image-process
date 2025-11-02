@@ -7,6 +7,11 @@ from shutil import which
 from invoke import task
 
 logger = logging.getLogger(__name__)
+level = logging.INFO
+logger.setLevel(level)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(level)
+logger.addHandler(console_handler)
 
 PKG_NAME = "image_process"
 PKG_PATH = Path(f"pelican/plugins/{PKG_NAME}")

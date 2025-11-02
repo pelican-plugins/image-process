@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Multimedia :: Graphics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = "~=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "pelican>=4.5",
     "beautifulsoup4>=4.9",

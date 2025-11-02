@@ -18,7 +18,7 @@
       "repo_url": "https://github.com/pelican-plugins/image-process",
       "dev_status": "5 - Production/Stable",
       "tests_exist": true,
-      "python_version": ">=3.8.1,<4.0",
+      "python_version": ">=3.10",
       "pelican_version": ">=4.5",
       "_template": "https://github.com/getpelican/cookiecutter-pelican-plugin",
       "_commit": "4aa8104df7e76fa2dcbf583dcec8052e81d915ef"

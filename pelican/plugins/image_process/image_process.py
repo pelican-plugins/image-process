@@ -374,7 +374,7 @@ def compute_paths(img, settings, derivative):
     process_dir = settings["IMAGE_PROCESS_DIR"]
     img_src = urlparse(img["src"])
     img_src_path = url2pathname(img_src.path.lstrip("/"))
-    img_src_dirname, filename = os.path.split(img_src_path)
+    _img_src_dirname, filename = os.path.split(img_src_path)
     derivative_path = os.path.join(process_dir, derivative)
     # urljoin truncates leading ../ elements
     base_url = posixpath.join(

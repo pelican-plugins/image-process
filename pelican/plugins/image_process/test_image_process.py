@@ -123,14 +123,14 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     # depending on the platform on which they are run.
     if transformed.mode == "RGB":
         for _, (transformed_pixel, expected_pixel) in enumerate(
-            zip(transformed.getdata(), expected.getdata())
+            zip(transformed.getdata(), expected.getdata(), strict=False)
         ):
             assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
             assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
             assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
     elif transformed.mode == "RGBA":
         for _, (transformed_pixel, expected_pixel) in enumerate(
-            zip(transformed.getdata(), expected.getdata())
+            zip(transformed.getdata(), expected.getdata(), strict=False)
         ):
             assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
             assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
@@ -138,7 +138,7 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
             assert abs(transformed_pixel[3] - expected_pixel[3]) <= 1
     elif transformed.mode == "L":
         for _, (transformed_pixel, expected_pixel) in enumerate(
-            zip(transformed.getdata(), expected.getdata())
+            zip(transformed.getdata(), expected.getdata(), strict=False)
         ):
             assert abs(transformed_pixel - expected_pixel) <= 1
     else:

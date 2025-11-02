@@ -21,8 +21,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Exiftool
-        run: sudo apt install libimage-exiftool-perl
+      - name: Use ExifTool
+        uses: woss/exiftool-action@v13.40
 
       - name: Set up Python ${{ matrix.python-version }} & PDM
         uses: pdm-project/setup-pdm@v4

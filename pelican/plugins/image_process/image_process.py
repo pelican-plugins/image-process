@@ -700,6 +700,12 @@ def try_open_image(path):
 
 
 def process_image(image, settings):
+    """Actually process the image.
+
+    Copies over the Exif tags, if ExifTool is available.
+
+    Returns (int, int): tuple of the width and height of the resulting image.
+    """
     # remove URL encoding to get to physical filenames
     image = list(image)
     image[0] = unquote(image[0])

@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+3.2.0 - 2025-11-04
+------------------
+
+- Update `ExifImageWidth` & `ExifImageHeight` tags to match dimensions of transformed image when copying EXIF tags
+- Copying EXIF tags only updates dimension tags if they existed in the source image
+- Add `width` and `height` attributes to `<img>` tags based on processed image’s actual dimensions
+- Add Python 3.14 support and require Python 3.10+
+
 3.1.0 - 2025-03-18
 ------------------
 

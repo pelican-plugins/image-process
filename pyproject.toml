@@ -1,6 +1,6 @@
 [project]
 name = "pelican-image-process"
-version = "3.1.0"
+version = "3.2.0"
 description = "Pelican plugin that automates image processing."
 authors = [{name = "Pelican Dev Team", email = "authors@getpelican.com"}]
 license = {text = "AGPL-3.0"}

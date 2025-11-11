@@ -44,6 +44,9 @@ classes. It then maps the classes to a set of image processing
 instructions, computes new images, and modifies HTML code according to
 the instructions.
 
+It can optionally scan the metadata of your content to update image URLs
+there.
+
 ### Define Transformations
 
 The first step in using this module is to define some image
@@ -516,6 +519,31 @@ IMAGE_PROCESS_CLASS_PREFIX = "custom-prefix-"
 # Disable adding transformation class attributes
 IMAGE_PROCESS_ADD_CLASS = False
 ```
+
+#### Updating Image URLs in Metadata
+
+If you want *Image Process* to process and update image URLs in the metadata
+of your content (for example, in the `og_image` field used by the `pelican-open_graph` plugin),
+you can set the `IMAGE_PROCESS_UPDATE_METADATA` setting to a dictionary mapping
+metadata fields to transformation names. For example:
+
+```python
+IMAGE_PROCESS_UPDATE_METADATA = {
+    "og_image": "og-image-transform",
+}
+```
+
+The transformation must be defined in the `IMAGE_PROCESS` setting as usual, and it must be
+an image replacement transformation (i.e., of type `image`).
+
+It is possible to override the transformation applied to a metadata field by prefixing
+the metadata value with `{transform-name}`. For example, if you have defined
+`IMAGE_PROCESS_UPDATE_METADATA` as above, you can override the transformation for a specific article
+by setting the `og_image` metadata field to `{other-transform}/path/to/image.jpg`.
+
+If you only want to process metadata in some articles, you can set the transformation to `None`
+in `IMAGE_PROCESS_UPDATE_METADATA` and then specify the desired transformation in the metadata
+field using the `{transform-name}` prefix.
 
 ## Known Issues
 

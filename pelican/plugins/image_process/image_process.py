@@ -389,15 +389,15 @@ def harvest_images_in_fragment(fragment, settings):
     return str(soup)
 
 
-def compute_paths(img, settings, derivative):
+def compute_paths(image_url, settings, derivative):
     process_dir = settings["IMAGE_PROCESS_DIR"]
-    img_src = urlparse(img["src"])
+    img_src = urlparse(image_url)
     img_src_path = url2pathname(img_src.path.lstrip("/"))
     _img_src_dirname, filename = os.path.split(img_src_path)
     derivative_path = os.path.join(process_dir, derivative)
     # urljoin truncates leading ../ elements
     base_url = posixpath.join(
-        posixpath.dirname(img["src"]), pathname2url(str(derivative_path))
+        posixpath.dirname(image_url), pathname2url(str(derivative_path))
     )
 
     PELICAN_V4 = 4
@@ -439,7 +439,7 @@ def compute_paths(img, settings, derivative):
 
 
 def process_img_tag(img, settings, derivative):
-    path = compute_paths(img, settings, derivative)
+    path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
     img["src"] = posixpath.join(path.base_url, path.filename)
@@ -465,7 +465,7 @@ def format_srcset_element(path, condition):
 
 
 def build_srcset(img, settings, derivative):
-    path = compute_paths(img, settings, derivative)
+    path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
     default = process["default"]
@@ -768,6 +768,47 @@ def process_image(image, settings):
     return i.width, i.height
 
 
+def process_metadata(generator, metadata):
+    set_default_settings(generator.context)
+    metadata_to_process = generator.context.get("IMAGE_PROCESS_METADATA", {}).keys()
+
+    for key, value in metadata.items():
+        if key in metadata_to_process:
+            derivative = generator.context["IMAGE_PROCESS_METADATA"][key]
+            # If value starts with {some-other-derivative}, override derivative
+            if value.startswith("{") and "}" in value:
+                end_brace = value.index("}")
+                derivative = value[1:end_brace]
+                value = value[end_brace + 1 :].lstrip()  # noqa: PLW2901
+
+            if derivative is None:
+                continue
+
+            try:
+                process = generator.context["IMAGE_PROCESS"][derivative]
+            except KeyError as e:
+                raise RuntimeError(f"Derivative {derivative} undefined.") from e
+
+            if not (
+                isinstance(process, list)
+                or (isinstance(process, dict) and process.type == "image")
+            ):
+                raise RuntimeError(
+                    f'IMAGE_PROCESS_METADATA "{key}" must reference a transformation '
+                    'of type "image".'
+                )
+
+            path = compute_paths(value, generator.context, derivative)
+
+            metadata[key] = posixpath.join(path.base_url, path.filename)
+            destination = os.path.join(str(path.base_path), path.filename)
+
+            if not isinstance(process, list):
+                process = process["ops"]
+
+            process_image((path.source, destination, process), generator.context)
+
+
 def dump_config(pelican):
     set_default_settings(pelican.settings)
 
@@ -779,6 +820,7 @@ def dump_config(pelican):
 
 
 def register():
+    signals.article_generator_context.connect(process_metadata)
     signals.content_written.connect(harvest_images)
     signals.feed_written.connect(harvest_feed_images)
     signals.finalized.connect(dump_config)

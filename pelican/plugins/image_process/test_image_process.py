@@ -14,6 +14,7 @@ from pelican.plugins.image_process import (
     compute_paths,
     harvest_images_in_fragment,
     process_image,
+    process_metadata,
     set_default_settings,
     try_open_image,
 )
@@ -836,9 +837,9 @@ def test_try_open_image():
         assert not try_open_image(TEST_DATA.joinpath("folded_puzzle.png"))
         assert not try_open_image(TEST_DATA.joinpath("minimal.svg"))
 
-    img = {"src": "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"}
+    img_path = "https://upload.wikimedia.org/wikipedia/commons/3/34/Exemple.png"
     settings = get_settings(IMAGE_PROCESS_DIR="derivatives")
-    path = compute_paths(img, settings, derivative="thumb")
+    path = compute_paths(img_path, settings, derivative="thumb")
     with pytest.raises(FileNotFoundError):
         assert not try_open_image(path.source)
 
@@ -899,6 +900,62 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
     for override in setting_overrides:
         settings = get_settings(**override)
         assert harvest_images_in_fragment(orig_tag, settings) == new_tag
+
+
+@pytest.mark.parametrize(
+    "orig_metadata, new_metadata, setting_overrides, should_process, transform_id",
+    [
+        (
+            {"title": "Test Article"},
+            {"title": "Test Article"},
+            {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
+            False,
+            None,
+        ),
+        (
+            {"og_image": "/photos/test-image.jpg"},
+            {"og_image": "/photos/derivatives/crop/test-image.jpg"},
+            {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
+            True,
+            "crop",
+        ),
+        (
+            {"og_image": "{resize}/photos/test-image.jpg"},
+            {"og_image": "/photos/derivatives/resize/test-image.jpg"},
+            {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
+            True,
+            "resize",
+        ),
+    ],
+)
+def test_process_metadata_image(  # noqa: PLR0913
+    mocker, orig_metadata, new_metadata, setting_overrides, should_process, transform_id
+):
+    # Silence image transforms.
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+
+    settings = get_settings(**setting_overrides)
+
+    fake_generator = mocker.MagicMock()
+    fake_generator.context = settings
+    processed_metadata = orig_metadata.copy()
+    process_metadata(fake_generator, processed_metadata)
+
+    assert processed_metadata == new_metadata
+
+    if should_process:
+        path = orig_metadata["og_image"]
+        if path.startswith("{") and "}" in path:
+            path = path.split("}", 1)[1]
+
+        process.assert_called_once_with(
+            (
+                os.path.join(settings["PATH"], path[1:]),
+                os.path.join(settings["OUTPUT_PATH"], new_metadata["og_image"][1:]),
+                SINGLE_TRANSFORMS[transform_id],
+            ),
+            settings,
+        )
 
 
 def generate_test_images():

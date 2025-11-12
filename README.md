@@ -520,12 +520,12 @@ IMAGE_PROCESS_CLASS_PREFIX = "custom-prefix-"
 IMAGE_PROCESS_ADD_CLASS = False
 ```
 
-#### Updating Image URLs in Metadata
+#### Converting Image Paths to URLs in Metadata
 
-If you want *Image Process* to process and update image URLs in the metadata
+If you want *Image Process* to process images in the metadata
 of your content (for example, in the `og_image` field used by the `pelican-open_graph` plugin),
 you can set the `IMAGE_PROCESS_UPDATE_METADATA` setting to a dictionary mapping
-metadata fields to transformation names. For example:
+metadata field names to transformation names. For example:
 
 ```python
 IMAGE_PROCESS_UPDATE_METADATA = {
@@ -534,18 +534,21 @@ IMAGE_PROCESS_UPDATE_METADATA = {
 ```
 
 The transformation must be defined in the `IMAGE_PROCESS` setting as usual, and it must be
-an image replacement transformation (i.e., of type `image`).
+an image replacement transformation (i.e., of type `image`). *Image Process* will look for the specified
+metadata fields in your content and will apply the specified transformation
+to the image path found in the metadata value.
 
-It is possible to override the transformation applied to a metadata field by prefixing
+It is possible to override the transformation applied to a specific instance of a metadata field by prefixing
 the metadata value with `{transform-name}`. For example, if you have defined
 `IMAGE_PROCESS_UPDATE_METADATA` as above, you can override the transformation for a specific article
-by setting the `og_image` metadata field to `{other-transform}/path/to/image.jpg`.
+by setting its `og_image` metadata value to `{other-transform}/path/to/image.jpg`.
 
-If you only want to process metadata in some articles, you can set the transformation to `None`
-in `IMAGE_PROCESS_UPDATE_METADATA` and then specify the desired transformation in the metadata
-field using the `{transform-name}` prefix.
+If you only want to process metadata fields for some articles, you can set the transformation to `None`
+in `IMAGE_PROCESS_UPDATE_METADATA` and add the `{transform-name}` prefix to the metadata value of
+selected articles.
 
-The original metadata values are placed in the `image_process_original_metadata` dictionary
+*Image Process* will update the metadata field to contain the URL of the transformed image.
+The original metadata values are saved in the `image_process_original_metadata` dictionary
 of the content object, so that you can access them later if needed.
 
 ## Known Issues

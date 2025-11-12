@@ -772,6 +772,8 @@ def process_metadata(generator, metadata):
     set_default_settings(generator.context)
     metadata_to_process = generator.context.get("IMAGE_PROCESS_METADATA", {}).keys()
 
+    original_values = {}
+
     for key, value in metadata.items():
         if key in metadata_to_process:
             derivative = generator.context["IMAGE_PROCESS_METADATA"][key]
@@ -791,7 +793,7 @@ def process_metadata(generator, metadata):
 
             if not (
                 isinstance(process, list)
-                or (isinstance(process, dict) and process.type == "image")
+                or (isinstance(process, dict) and process["type"] == "image")
             ):
                 raise RuntimeError(
                     f'IMAGE_PROCESS_METADATA "{key}" must reference a transformation '
@@ -800,6 +802,7 @@ def process_metadata(generator, metadata):
 
             path = compute_paths(value, generator.context, derivative)
 
+            original_values[key] = value
             metadata[key] = posixpath.join(path.base_url, path.filename)
             destination = os.path.join(str(path.base_path), path.filename)
 
@@ -807,6 +810,9 @@ def process_metadata(generator, metadata):
                 process = process["ops"]
 
             process_image((path.source, destination, process), generator.context)
+
+    if original_values:
+        metadata["image_process_original_metadata"] = original_values
 
 
 def dump_config(pelican):

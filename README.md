@@ -545,6 +545,9 @@ If you only want to process metadata in some articles, you can set the transform
 in `IMAGE_PROCESS_UPDATE_METADATA` and then specify the desired transformation in the metadata
 field using the `{transform-name}` prefix.
 
+The original metadata values are placed in the `image_process_original_metadata` dictionary
+of the content object, so that you can access them later if needed.
+
 ## Known Issues
 
 * Pillow, when resizing animated GIF files, [does not return an animated file](https://github.com/pelican-plugins/image-process/issues/11).

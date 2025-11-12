@@ -18,7 +18,7 @@ import shutil
 import subprocess
 import sys
 import urllib
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlparse, urljoin
 from urllib.request import pathname2url, url2pathname
 
 from bs4 import BeautifulSoup
@@ -771,6 +771,7 @@ def process_image(image, settings):
 def process_metadata(generator, metadata):
     set_default_settings(generator.context)
     metadata_to_process = generator.context.get("IMAGE_PROCESS_METADATA", {}).keys()
+    site_url = generator.context.get("SITEURL", "")
 
     original_values = {}
 
@@ -803,7 +804,7 @@ def process_metadata(generator, metadata):
             path = compute_paths(value, generator.context, derivative)
 
             original_values[key] = value
-            metadata[key] = posixpath.join(path.base_url, path.filename)
+            metadata[key] = urljoin(site_url, posixpath.join(path.base_url, path.filename))
             destination = os.path.join(str(path.base_path), path.filename)
 
             if not isinstance(process, list):

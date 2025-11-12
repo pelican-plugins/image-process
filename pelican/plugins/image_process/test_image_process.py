@@ -914,14 +914,24 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
         ),
         (
             {"og_image": "/photos/test-image.jpg"},
-            {"og_image": "/photos/derivatives/crop/test-image.jpg"},
+            {
+                "og_image": "/photos/derivatives/crop/test-image.jpg",
+                "image_process_original_metadata": {
+                    "og_image": "/photos/test-image.jpg"
+                },
+            },
             {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
             True,
             "crop",
         ),
         (
             {"og_image": "{resize}/photos/test-image.jpg"},
-            {"og_image": "/photos/derivatives/resize/test-image.jpg"},
+            {
+                "og_image": "/photos/derivatives/resize/test-image.jpg",
+                "image_process_original_metadata": {
+                    "og_image": "/photos/test-image.jpg"
+                },
+            },
             {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
             True,
             "resize",

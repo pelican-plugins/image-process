@@ -18,7 +18,7 @@ import shutil
 import subprocess
 import sys
 import urllib
-from urllib.parse import unquote, urlparse, urljoin
+from urllib.parse import unquote, urljoin, urlparse
 from urllib.request import pathname2url, url2pathname
 
 from bs4 import BeautifulSoup
@@ -804,7 +804,9 @@ def process_metadata(generator, metadata):
             path = compute_paths(value, generator.context, derivative)
 
             original_values[key] = value
-            metadata[key] = urljoin(site_url, posixpath.join(path.base_url, path.filename))
+            metadata[key] = urljoin(
+                site_url, posixpath.join(path.base_url, path.filename)
+            )
             destination = os.path.join(str(path.base_path), path.filename)
 
             if not isinstance(process, list):

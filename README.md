@@ -44,6 +44,9 @@ classes. It then maps the classes to a set of image processing
 instructions, computes new images, and modifies HTML code according to
 the instructions.
 
+It can optionally scan the metadata of your content to update image URLs
+there.
+
 ### Define Transformations
 
 The first step in using this module is to define some image
@@ -516,6 +519,37 @@ IMAGE_PROCESS_CLASS_PREFIX = "custom-prefix-"
 # Disable adding transformation class attributes
 IMAGE_PROCESS_ADD_CLASS = False
 ```
+
+#### Converting Image Paths to URLs in Metadata
+
+If you want *Image Process* to process images in the metadata
+of your content (for example, in the `og_image` field used by the `seo` and  `pelican-open_graph` plugins),
+you can set the `IMAGE_PROCESS_METADATA` setting to a dictionary mapping
+metadata field names to transformation names. For example:
+
+```python
+IMAGE_PROCESS_METADATA = {
+    "og_image": "og-image-transform",
+}
+```
+
+The transformation must be defined in the `IMAGE_PROCESS` setting as usual, and it must be
+an image replacement transformation (i.e., of type `image`). *Image Process* will look for the specified
+metadata fields in your content and will apply the specified transformation
+to the image path found in the metadata value.
+
+It is possible to override the transformation applied to a specific instance of a metadata field by prefixing
+the metadata value with `{transform-name}`. For example, if you have defined
+`IMAGE_PROCESS_METADATA` as above, you can override the transformation for a specific article
+by setting its `og_image` metadata value to `{other-transform}/path/to/image.jpg`.
+
+If you only want to process metadata fields for some articles, you can set the transformation to `None`
+in `IMAGE_PROCESS_METADATA` and add the `{transform-name}` prefix to the metadata value of
+selected articles.
+
+*Image Process* will update the metadata field to contain the URL of the transformed image.
+The original metadata values are saved in the `image_process_original_metadata` dictionary
+of the content object, so that you can access them later if needed.
 
 ## Known Issues
 

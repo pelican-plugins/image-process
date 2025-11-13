@@ -977,6 +977,8 @@ def test_process_metadata_image(  # noqa: PLR0913
             settings,
         )
 
+        assert processed_metadata["image_process_original_metadata"]["og_image"] == path
+
 
 def generate_test_images():
     settings = get_settings()

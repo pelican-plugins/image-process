@@ -966,7 +966,7 @@ def test_process_metadata_image(  # noqa: PLR0913
     if should_process:
         path = orig_metadata["og_image"]
         if path.startswith("{") and "}" in path:
-            path = path.split("}", 1)[1]
+            path = path.split("}", 1)[1].lstrip()
 
         process.assert_called_once_with(
             (

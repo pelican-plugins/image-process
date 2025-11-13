@@ -524,11 +524,11 @@ IMAGE_PROCESS_ADD_CLASS = False
 
 If you want *Image Process* to process images in the metadata
 of your content (for example, in the `og_image` field used by the `pelican-open_graph` plugin),
-you can set the `IMAGE_PROCESS_UPDATE_METADATA` setting to a dictionary mapping
+you can set the `IMAGE_PROCESS_METADATA` setting to a dictionary mapping
 metadata field names to transformation names. For example:
 
 ```python
-IMAGE_PROCESS_UPDATE_METADATA = {
+IMAGE_PROCESS_METADATA = {
     "og_image": "og-image-transform",
 }
 ```
@@ -540,11 +540,11 @@ to the image path found in the metadata value.
 
 It is possible to override the transformation applied to a specific instance of a metadata field by prefixing
 the metadata value with `{transform-name}`. For example, if you have defined
-`IMAGE_PROCESS_UPDATE_METADATA` as above, you can override the transformation for a specific article
+`IMAGE_PROCESS_METADATA` as above, you can override the transformation for a specific article
 by setting its `og_image` metadata value to `{other-transform}/path/to/image.jpg`.
 
 If you only want to process metadata fields for some articles, you can set the transformation to `None`
-in `IMAGE_PROCESS_UPDATE_METADATA` and add the `{transform-name}` prefix to the metadata value of
+in `IMAGE_PROCESS_METADATA` and add the `{transform-name}` prefix to the metadata value of
 selected articles.
 
 *Image Process* will update the metadata field to contain the URL of the transformed image.

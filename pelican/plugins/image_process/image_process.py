@@ -390,6 +390,12 @@ def harvest_images_in_fragment(fragment, settings):
 
 
 def compute_paths(image_url, settings, derivative):
+    # Backwards compatibility: accept either a string (image_url) or
+    # a dict (img with "src" key)
+    if isinstance(image_url, dict):
+        image_url = image_url.get("src", "")
+        logger.warning(f"{LOG_PREFIX} Deprecated use of dict for image_url.")
+
     process_dir = settings["IMAGE_PROCESS_DIR"]
     img_src = urlparse(image_url)
     img_src_path = url2pathname(img_src.path.lstrip("/"))
@@ -776,7 +782,7 @@ def process_metadata(generator, metadata):
     original_values = {}
 
     for key, value in metadata.items():
-        if key in metadata_to_process:
+        if isinstance(value, str) and key in metadata_to_process:
             derivative = generator.context["IMAGE_PROCESS_METADATA"][key]
             # If value starts with {some-other-derivative}, override derivative
             if value.startswith("{") and "}" in value:

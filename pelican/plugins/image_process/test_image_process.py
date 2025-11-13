@@ -91,7 +91,7 @@ def get_settings(**kwargs):
         "OUTPUT_PATH": "output",
         "static_content": {},
         "filenames": {},
-        "SITEURL": "//",
+        "SITEURL": "https://www.example.com",
         "IMAGE_PROCESS": SINGLE_TRANSFORMS,
     }
     settings = DEFAULT_CONFIG.copy()
@@ -903,7 +903,8 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
 
 
 @pytest.mark.parametrize(
-    "orig_metadata, new_metadata, setting_overrides, should_process, transform_id",
+    "orig_metadata, new_metadata, setting_overrides, should_process, transform_id, "
+    "expected_output_path",
     [
         (
             {"title": "Test Article"},
@@ -911,11 +912,12 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
             {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
             False,
             None,
+            None,
         ),
         (
             {"og_image": "/photos/test-image.jpg"},
             {
-                "og_image": "/photos/derivatives/crop/test-image.jpg",
+                "og_image": "https://www.example.com/photos/derivatives/crop/test-image.jpg",
                 "image_process_original_metadata": {
                     "og_image": "/photos/test-image.jpg"
                 },
@@ -923,11 +925,12 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
             {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
             True,
             "crop",
+            "photos/derivatives/crop/test-image.jpg",
         ),
         (
             {"og_image": "{resize}/photos/test-image.jpg"},
             {
-                "og_image": "/photos/derivatives/resize/test-image.jpg",
+                "og_image": "https://www.example.com/photos/derivatives/resize/test-image.jpg",
                 "image_process_original_metadata": {
                     "og_image": "/photos/test-image.jpg"
                 },
@@ -935,11 +938,18 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
             {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
             True,
             "resize",
+            "photos/derivatives/resize/test-image.jpg",
         ),
     ],
 )
 def test_process_metadata_image(  # noqa: PLR0913
-    mocker, orig_metadata, new_metadata, setting_overrides, should_process, transform_id
+    mocker,
+    orig_metadata,
+    new_metadata,
+    setting_overrides,
+    should_process,
+    transform_id,
+    expected_output_path,
 ):
     # Silence image transforms.
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
@@ -961,7 +971,7 @@ def test_process_metadata_image(  # noqa: PLR0913
         process.assert_called_once_with(
             (
                 os.path.join(settings["PATH"], path[1:]),
-                os.path.join(settings["OUTPUT_PATH"], new_metadata["og_image"][1:]),
+                os.path.join(settings["OUTPUT_PATH"], expected_output_path),
                 SINGLE_TRANSFORMS[transform_id],
             ),
             settings,

@@ -523,7 +523,7 @@ IMAGE_PROCESS_ADD_CLASS = False
 #### Converting Image Paths to URLs in Metadata
 
 If you want *Image Process* to process images in the metadata
-of your content (for example, in the `og_image` field used by the `pelican-open_graph` plugin),
+of your content (for example, in the `og_image` field used by the `seo` and  `pelican-open_graph` plugins),
 you can set the `IMAGE_PROCESS_METADATA` setting to a dictionary mapping
 metadata field names to transformation names. For example:
 

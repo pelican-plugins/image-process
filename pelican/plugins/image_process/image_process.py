@@ -793,6 +793,24 @@ def process_metadata(generator, metadata):
             if derivative is None:
                 continue
 
+            # Ignore Pelican special linking directives to avoid conflicts.
+            # Extracted from Pelican function _link_replacer() in contents.py
+            special_file_locations = {
+                "filename",
+                "attach",
+                "static",
+                "category",
+                "tag",
+                "author",
+                "index",
+            }
+            if derivative in special_file_locations:
+                logger.warning(
+                    f"{LOG_PREFIX} Skipping metadata key '{key}' "
+                    f"because it uses Pelican linking directive '{derivative}'."
+                )
+                continue
+
             try:
                 process = generator.context["IMAGE_PROCESS"][derivative]
             except KeyError as e:

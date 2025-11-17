@@ -523,31 +523,54 @@ IMAGE_PROCESS_ADD_CLASS = False
 #### Converting Image Paths to URLs in Metadata
 
 If you want *Image Process* to process images in the metadata
-of your content (for example, in the `og_image` field used by the `seo` and  `pelican-open_graph` plugins),
+of your content (for example, in the `og_image` field used by the `seo` and `pelican-open_graph` plugins),
 you can set the `IMAGE_PROCESS_METADATA` setting to a dictionary mapping
-metadata field names to transformation names. For example:
+metadata field names to transformation names. The transformation must be defined
+in the `IMAGE_PROCESS` setting as usual, and it must be
+an image replacement transformation (i.e., of type `image`).
+For example:
 
 ```python
+# pelicanconf.py
+
 IMAGE_PROCESS_METADATA = {
     "og_image": "og-image-transform",
 }
+
+IMAGE_PROCESS = {
+    'og-image-transform': {"type": "image",
+                           "ops": ["scale_in 800 640 True"],
+                          },
+    # ... possibly other transformations ...
+}
 ```
 
-The transformation must be defined in the `IMAGE_PROCESS` setting as usual, and it must be
-an image replacement transformation (i.e., of type `image`). *Image Process* will look for the specified
+*Image Process* will look for the specified
 metadata fields in your content and will apply the specified transformation
 to the image path found in the metadata value.
 
 It is possible to override the transformation applied to a specific instance of a metadata field by prefixing
-the metadata value with `{transform-name}`. For example, if you have defined
+the metadata value with `{transformation-name}`, where `transformation-name` is the name
+of a transformation in the `IMAGE_PROCESS` dictionary. For example, if you have defined
 `IMAGE_PROCESS_METADATA` as above, you can override the transformation for a specific article
-by setting its `og_image` metadata value to `{other-transform}/path/to/image.jpg`.
+by setting its `og_image` metadata value to `{some-special-transformation}/path/to/image.jpg`,
+where `some-special-transformation` is a transformation defined in the `IMAGE_PROCESS`
+dictionary. Here is an example article using this feature:
+
+```markdown
+# Example article
+Title: Example Article
+Date: 2024-06-01
+og_image: {some-special-transformation}/images/special-image.jpg
+
+This article uses a special image for Open Graph.
+```
 
 If you only want to process metadata fields for some articles, you can set the transformation to `None`
-in `IMAGE_PROCESS_METADATA` and add the `{transform-name}` prefix to the metadata value of
+in `IMAGE_PROCESS_METADATA` and add a `{transform-name}` prefix to the metadata value of
 selected articles.
 
-*Image Process* will update the metadata field to contain the URL of the transformed image.
+*Image Process* will update the metadata field to the URL of the transformed image.
 The original metadata values are saved in the `image_process_original_metadata` dictionary
 of the content object, so that you can access them later if needed.
 

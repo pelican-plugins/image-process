@@ -940,6 +940,15 @@ def test_class_settings(mocker, orig_tag, new_tag, setting_overrides):
             "resize",
             "photos/derivatives/resize/test-image.jpg",
         ),
+        # Ignore Pelican special linking directives like {static} and {attach}.
+        (
+            {"og_image": "{static}/photos/test-image.jpg"},
+            {"og_image": "{static}/photos/test-image.jpg"},
+            {"IMAGE_PROCESS_METADATA": {"og_image": "crop"}},
+            False,
+            None,
+            None,
+        ),
     ],
 )
 def test_process_metadata_image(  # noqa: PLR0913

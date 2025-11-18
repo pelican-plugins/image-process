@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+3.3.0 - 2025-11-18
+------------------
+
+- Process images in content metadata via new `IMAGE_PROCESS_METADATA` setting
+
+Contributed by [Patrick Fournier](https://github.com/patrickfournier) via [PR #99](https://github.com/pelican-plugins/image-process/pull/99/)
+
+
 3.2.0 - 2025-11-04
 ------------------
 

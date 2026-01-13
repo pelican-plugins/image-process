@@ -448,13 +448,21 @@ def process_img_tag(img, settings, derivative):
     path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
-    img["src"] = posixpath.join(path.base_url, path.filename)
     destination = os.path.join(str(path.base_path), path.filename)
 
     if not isinstance(process, list):
         process = process["ops"]
 
-    image_size = process_image((path.source, destination, process), settings)
+    try:
+        image_size = process_image((path.source, destination, process), settings)
+    except (UnidentifiedImageError, FileNotFoundError):
+        image_size = None
+    else:
+        # Only try and find the image at the new location (in the generated
+        # site) if we've processed the image successfully. Otherwise, default
+        # to the original location
+        img["src"] = posixpath.join(path.base_url, path.filename)
+
     if image_size:
         if "width" not in img.attrs:
             img["width"] = image_size[0]
@@ -713,9 +721,7 @@ def try_open_image(path):
     try:
         i = Image.open(path)
     except UnidentifiedImageError:
-        logger.warning(
-            f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.'
-        )
+        logger.info(f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.')
         raise
     except FileNotFoundError:
         logger.warning(f'{LOG_PREFIX} Source image "{path}" not found.')
@@ -749,8 +755,9 @@ def process_image(image, settings):
 
         try:
             i = try_open_image(image[0])
-        except (UnidentifiedImageError, FileNotFoundError):
-            return None
+        except (UnidentifiedImageError, FileNotFoundError):  # noqa: TRY203
+            # return None
+            raise
 
         for step in image[2]:
             if callable(step):

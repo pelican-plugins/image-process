@@ -721,9 +721,7 @@ def try_open_image(path):
     try:
         i = Image.open(path)
     except UnidentifiedImageError:
-        logger.warning(
-            f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.'
-        )
+        logger.info(f'{LOG_PREFIX} Source image "{path}" is not supported by Pillow.')
         raise
     except FileNotFoundError:
         logger.warning(f'{LOG_PREFIX} Source image "{path}" not found.')

@@ -140,6 +140,47 @@ class ExifTool:
         )
 
 
+def get_target_format(config, default_format=None):
+    """Extract the target format from various configuration structures.
+
+    Target format can be specified in a number of different ways in the configuration:
+
+    - Top-level default format: "output-format": "webp"
+    - Responsive image: "srcset": [ ("small", ["scale_in 100 100 True"], "webp"),]
+    - Picture: "sources": [ ("small", ["scale_in 100 100 True"], "webp"),]
+
+    Returns the target format string (e.g., "webp") or None.
+    """
+    if isinstance(config, dict):
+        return config.get("output-format", default_format)
+
+    if isinstance(config, (list, str)):
+        return default_format
+
+    if isinstance(config, tuple):
+        # Handle (condition, ops, format) or (ops, format)
+        match config:
+            # Matches (condition, ops, format) where 1st element is a string
+            case (str(), ops, str() as format_str):
+                return format_str
+
+            # Matches (ops, format) with ops not string
+            case (ops, format_str) if not isinstance(ops, str):
+                return format_str
+
+    return default_format
+
+
+def get_target_filename(filename, target_format):
+    """Return the filename with the target format extension."""
+    if not target_format or target_format == "original":
+        return filename
+
+    base, _ext = os.path.splitext(filename)
+    target_format = target_format.lstrip(".")
+    return f"{base}.{target_format}"
+
+
 def convert_box(image, top, left, right, bottom):
     """Convert box coordinates strings to integer.
 
@@ -448,8 +489,11 @@ def process_img_tag(img, settings, derivative):
     path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
-    img["src"] = posixpath.join(path.base_url, path.filename)
-    destination = os.path.join(str(path.base_path), path.filename)
+    target_format = get_target_format(process)
+    filename = get_target_filename(path.filename, target_format)
+
+    img["src"] = posixpath.join(path.base_url, filename)
+    destination = os.path.join(str(path.base_path), filename)
 
     if not isinstance(process, list):
         process = process["ops"]
@@ -474,10 +518,20 @@ def build_srcset(img, settings, derivative):
     path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
 
+    # Top-level default format.
+    top_default_format = get_target_format(process)
+
     default = process["default"]
     default_name = ""
+    default_format = top_default_format
     if isinstance(default, str):
-        breakpoints = {i for i, _ in process["srcset"]}
+        # find the entry in srcset to get its format
+        for entry in process["srcset"]:
+            if entry[0] == default:
+                default_format = get_target_format(entry, top_default_format)
+                break
+
+        breakpoints = {entry[0] for entry in process["srcset"]}
         if default not in breakpoints:
             logger.error(
                 '%s srcset "%s" does not define default "%s"',
@@ -486,34 +540,36 @@ def build_srcset(img, settings, derivative):
                 default,
             )
         default_name = default
-    elif isinstance(default, list):
+    elif isinstance(default, (list, tuple)):
         default_name = "default"
-        destination = os.path.join(str(path.base_path), default_name, path.filename)
-        process_image((path.source, destination, default), settings)
+        default_format = get_target_format(default, top_default_format)
+        ops = default[0] if isinstance(default, tuple) else default
+        filename = get_target_filename(path.filename, default_format)
+        destination = os.path.join(str(path.base_path), default_name, filename)
+        process_image((path.source, destination, ops), settings)
 
-    img["src"] = posixpath.join(path.base_url, default_name, path.filename)
+    filename = get_target_filename(path.filename, default_format)
+    img["src"] = posixpath.join(path.base_url, default_name, filename)
 
     if "sizes" in process:
         img["sizes"] = process["sizes"]
 
     srcset = []
     for src in process["srcset"]:
-        file_path = posixpath.join(path.base_url, src[0], path.filename)
+        entry_format = get_target_format(src, top_default_format)
+        filename = get_target_filename(path.filename, entry_format)
+        file_path = posixpath.join(path.base_url, src[0], filename)
         srcset.append(format_srcset_element(file_path, src[0]))
-        destination = os.path.join(str(path.base_path), src[0], path.filename)
+        destination = os.path.join(str(path.base_path), src[0], filename)
         process_image((path.source, destination, src[1]), settings)
 
     if len(srcset) > 0:
         img["srcset"] = ", ".join(srcset)
 
 
-def convert_div_to_picture_tag(soup, img, group, settings, derivative):
-    """Convert a div containing multiple images to a picture."""
+def prepare_image_sources(img, group, settings, derivative):
+    """Prepare image sources for the picture tag."""
     process_dir = settings["IMAGE_PROCESS_DIR"]
-    # Compile sources URL. Special source "default" uses the main
-    # image URL. Other sources use the img with classes
-    # [source['name'], 'image-process'].  We also remove the img from
-    # the DOM.
     sources = copy.deepcopy(settings["IMAGE_PROCESS"][derivative]["sources"])
     for s in sources:
         if s["name"] == "default":
@@ -529,6 +585,42 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
         url_path, s["filename"] = os.path.split(s["url"])
         s["base_url"] = os.path.join(url_path, process_dir, derivative)
         s["base_path"] = os.path.join(settings["OUTPUT_PATH"], s["base_url"][1:])
+    return sources
+
+
+def construct_picture_tag(soup, img, sources, settings):
+    """Construct the picture tag and add it to the DOM."""
+    picture_tag = soup.new_tag("picture")
+    for s in sources:
+        # Create new <source>
+        source_attrs = {k: s[k] for k in s if k in ["media", "sizes"]}
+        source_tag = soup.new_tag("source", **source_attrs)
+
+        top_source_format = get_target_format(s)
+
+        srcset = []
+        for src in s["srcset"]:
+            entry_format = get_target_format(src, top_source_format)
+            filename = get_target_filename(s["filename"], entry_format)
+            url = os.path.join(s["base_url"], s["name"], src[0], filename)
+            srcset.append(format_srcset_element(str(url), src[0]))
+
+            source = os.path.join(settings["PATH"], s["url"][1:])
+            destination = os.path.join(s["base_path"], s["name"], src[0], filename)
+            process_image((source, destination, src[1]), settings)
+
+        if len(srcset) > 0:
+            source_tag["srcset"] = ", ".join(srcset)
+
+        picture_tag.append(source_tag)
+
+    # Wrap img with <picture>
+    img.wrap(picture_tag)
+
+
+def convert_div_to_picture_tag(soup, img, group, settings, derivative):
+    """Convert a div containing multiple images to a picture."""
+    sources = prepare_image_sources(img, group, settings, derivative)
 
     # If default is not None, change default img source to the image
     # derivative referenced.
@@ -550,18 +642,29 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         if isinstance(default[1], str):
             default_item_name = default[1]
+            # find format from srcset
+            default_item_format = None
+            for entry in default_source["srcset"]:
+                if entry[0] == default_item_name:
+                    default_item_format = get_target_format(entry)
+                    break
 
-        elif isinstance(default[1], list):
+        elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
+            default_item_format = get_target_format(default[1])
+            ops = default[1][0] if isinstance(default[1], tuple) else default[1]
 
             source = os.path.join(settings["PATH"], default_source["url"][1:])
+            filename = get_target_filename(
+                default_source["filename"], default_item_format
+            )
             destination = os.path.join(
                 default_source["base_path"],
                 default_source_name,
                 default_item_name,
-                default_source["filename"],
+                filename,
             )
-            process_image((source, destination, default[1]), settings)
+            process_image((source, destination, ops), settings)
         else:
             raise RuntimeError(
                 "Unexpected type for the second value of tuple "
@@ -569,37 +672,39 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
                 (derivative,),
             )
 
+        filename = get_target_filename(default_source["filename"], default_item_format)
         # Change img src to url of default processed image.
         img["src"] = os.path.join(
             default_source["base_url"],
             default_source_name,
             default_item_name,
-            default_source["filename"],
+            filename,
         )
 
-    # Create picture tag.
-    picture_tag = soup.new_tag("picture")
-    for s in sources:
-        # Create new <source>
-        source_attrs = {k: s[k] for k in s if k in ["media", "sizes"]}
-        source_tag = soup.new_tag("source", **source_attrs)
+    construct_picture_tag(soup, img, sources, settings)
 
-        srcset = []
-        for src in s["srcset"]:
-            url = os.path.join(s["base_url"], s["name"], src[0], s["filename"])
-            srcset.append(format_srcset_element(str(url), src[0]))
 
-            source = os.path.join(settings["PATH"], s["url"][1:])
-            destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
-            process_image((source, destination, src[1]), settings)
+def generate_srcset_and_insert_source(img, s, settings):
+    """Generate srcset for a source and insert it into the DOM."""
+    top_source_format = get_target_format(s)
 
-        if len(srcset) > 0:
-            source_tag["srcset"] = ", ".join(srcset)
+    srcset = []
+    for src in s["srcset"]:
+        entry_format = get_target_format(src, top_source_format)
+        filename = get_target_filename(s["filename"], entry_format)
+        url = posixpath.join(s["base_url"], s["name"], src[0], filename)
+        srcset.append(format_srcset_element(str(url), src[0]))
 
-        picture_tag.append(source_tag)
+        source = os.path.join(settings["PATH"], s["url"][1:])
+        destination = os.path.join(s["base_path"], s["name"], src[0], filename)
+        process_image((source, destination, src[1]), settings)
 
-    # Wrap img with <picture>
-    img.wrap(picture_tag)
+    if len(srcset) > 0:
+        # Append source elements to the picture in the same order
+        # as they are found in
+        # settings['IMAGE_PROCESS'][derivative]['sources'].
+        s["element"]["srcset"] = ", ".join(srcset)
+        img.insert_before(s["element"])
 
 
 def process_picture(soup, img, group, settings, derivative):
@@ -662,18 +767,29 @@ def process_picture(soup, img, group, settings, derivative):
 
         if isinstance(default[1], str):
             default_item_name = default[1]
+            # find format from srcset
+            default_item_format = None
+            for entry in default_source["srcset"]:
+                if entry[0] == default_item_name:
+                    default_item_format = get_target_format(entry)
+                    break
 
-        elif isinstance(default[1], list):
+        elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
+            default_item_format = get_target_format(default[1])
+            ops = default[1][0] if isinstance(default[1], tuple) else default[1]
             source = os.path.join(settings["PATH"], default_source["url"][1:])
+            filename = get_target_filename(
+                default_source["filename"], default_item_format
+            )
             destination = os.path.join(
                 default_source["base_path"],
                 default_source_name,
                 default_item_name,
-                default_source["filename"],
+                filename,
             )
 
-            process_image((source, destination, default[1]), settings)
+            process_image((source, destination, ops), settings)
 
         else:
             raise RuntimeError(
@@ -682,31 +798,18 @@ def process_picture(soup, img, group, settings, derivative):
                 (derivative,),
             )
 
+        filename = get_target_filename(default_source["filename"], default_item_format)
         # Change img src to url of default processed image.
         img["src"] = posixpath.join(
             default_source["base_url"],
             default_source_name,
             default_item_name,
-            default_source["filename"],
+            filename,
         )
 
     # Generate srcsets and put back <source>s in <picture>.
     for s in sources:
-        srcset = []
-        for src in s["srcset"]:
-            url = posixpath.join(s["base_url"], s["name"], src[0], s["filename"])
-            srcset.append(format_srcset_element(str(url), src[0]))
-
-            source = os.path.join(settings["PATH"], s["url"][1:])
-            destination = os.path.join(s["base_path"], s["name"], src[0], s["filename"])
-            process_image((source, destination, src[1]), settings)
-
-        if len(srcset) > 0:
-            # Append source elements to the picture in the same order
-            # as they are found in
-            # settings['IMAGE_PROCESS'][derivative]['sources'].
-            s["element"]["srcset"] = ", ".join(srcset)
-            img.insert_before(s["element"])
+        generate_srcset_and_insert_source(img, s, settings)
 
 
 def try_open_image(path):
@@ -828,10 +931,12 @@ def process_metadata(generator, metadata):
             path = compute_paths(value, generator.context, derivative)
 
             original_values[key] = value
-            metadata[key] = urljoin(
-                site_url, posixpath.join(path.base_url, path.filename)
-            )
-            destination = os.path.join(str(path.base_path), path.filename)
+
+            target_format = get_target_format(process)
+            filename = get_target_filename(path.filename, target_format)
+
+            metadata[key] = urljoin(site_url, posixpath.join(path.base_url, filename))
+            destination = os.path.join(str(path.base_path), filename)
 
             if not isinstance(process, list):
                 process = process["ops"]

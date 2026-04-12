@@ -1,3 +1,3 @@
-Release type: major
+Release type: minor
 
-Added option to specify output image format to automatically convert images.
+Feature: Specify output file format of images to transcode them automatically.

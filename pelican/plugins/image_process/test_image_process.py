@@ -48,6 +48,10 @@ NOEXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("noexif", f"pelican-bird.{ext}").resolve()
     for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
+FORMAT_TEST_IMAGES_JPG = [
+    TEST_DATA.joinpath(f"{file}.jpg").resolve()
+    for file in ["pelican-bird", "black-borders"]
+]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
@@ -163,6 +167,223 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
             assert abs(transformed_pixel - expected_pixel) <= 1
     else:
         raise ValueError(f"Unsupported image mode: {transformed.mode}")
+
+
+COMPLEX_FORMAT_TRANSFORMS = {
+    "resp_top_webp": {
+        "type": "responsive-image",
+        "output-format": "webp",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"]),
+        ],
+        "default": "1x",
+    },
+    "resp_per_entry_mixed": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"], "webp"),
+            ("2x", ["scale_in 1600 1200 True"], "avif"),
+            ("4x", ["scale_in 3200 2400 True"], "original"),
+        ],
+        "default": "1x",
+    },
+    "resp_custom_default_jpg": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+        ],
+        "default": (["scale_in 400 300 True"], "jpg"),
+    },
+    "picture_formats": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "webp-src",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                    ("1024w", ["scale_in 1024 768 True"]),
+                ],
+            },
+            {
+                "name": "avif-src",
+                "output-format": "avif",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+            {
+                "name": "orig-src",
+                "srcset": [
+                    ("1x", ["crop 100 100 200 200"], "original"),
+                ],
+            },
+        ],
+        "default": ("webp-src", "640w"),
+    },
+    "resp_mixed_top_and_entry": {
+        "type": "responsive-image",
+        "output-format": "jpg",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"], "webp"),
+        ],
+        "default": "1x",
+    },
+}
+
+
+class TestComplexFormatTransforms:
+    """Test complex format transforms of file format conversions."""
+
+    @pytest.mark.parametrize("transform_id", COMPLEX_FORMAT_TRANSFORMS.keys())
+    @pytest.mark.parametrize(
+        "image_path", TRANSFORM_TEST_IMAGES + FORMAT_TEST_IMAGES_JPG
+    )
+    def test_complex_format_transforms(self, tmp_path, transform_id, image_path):
+        """Test complex format transforms generate correct output extensions.
+
+        This test verifies that the generated image URLs have the expected
+        image format extensions based on the transform configuration, including
+        handling of default entries and per-entry format specifications, but
+        excluding verification of the actual image content or format.
+        """
+        settings = get_settings(
+            IMAGE_PROCESS=COMPLEX_FORMAT_TRANSFORMS, IMAGE_PROCESS_DIR="transformderivs"
+        )
+
+        image_src = f"/tmp/{image_path.name}"
+        tag = f'<img class="image-process-{transform_id}" src="{image_src}"/>'
+
+        result = harvest_images_in_fragment(tag, settings)
+        soup = BeautifulSoup(result, "html.parser")
+        urls = self._extract_urls(soup)
+
+        assert len(urls) > 0, f"No URLs generated for {transform_id}"
+
+        transform_config = COMPLEX_FORMAT_TRANSFORMS[transform_id]
+        for url in urls:
+            ext = Path(url).suffix.lower()
+            expected_ext = self._determine_expected_ext(
+                url, transform_config, image_path.suffix.lower()
+            )
+            assert ext == expected_ext, (
+                f"Extension mismatch for {transform_id}: "
+                f"expected {expected_ext}, got {ext} in URL {url}"
+            )
+
+    def _extract_urls(self, soup):
+        """Extract all image URLs from parsed HTML soup."""
+        urls = []
+        if soup.img.get("src"):
+            urls.append(soup.img["src"])
+        if soup.img.get("srcset"):
+            for item in soup.img["srcset"].split(","):
+                parts = item.strip().split()
+                if parts:
+                    urls.append(parts[0])
+        for source in soup.find_all("source"):
+            if source.get("srcset"):
+                for item in source["srcset"].split(","):
+                    parts = item.strip().split()
+                    if parts:
+                        urls.append(parts[0])
+        return urls
+
+    def _determine_expected_ext(self, url, transform_config, source_ext):
+        """Determine expected extension for a given URL based on transform config."""
+        transform_type = transform_config["type"]
+
+        if transform_type == "responsive-image":
+            return self._get_responsive_image_ext(url, transform_config, source_ext)
+        if transform_type == "picture":
+            return self._get_picture_ext(url, transform_config, source_ext)
+
+        return source_ext
+
+    def _get_responsive_image_ext(self, url, transform_config, source_ext):
+        """Get expected extension for responsive-image transform."""
+        top_format = transform_config.get("output-format")
+        srcset = transform_config.get("srcset", [])
+
+        if "/default/" in url:
+            return self._get_default_ext(
+                transform_config, srcset, top_format, source_ext
+            )
+
+        entry = self._find_matching_srcset_entry(url, srcset)
+        if entry:
+            return self._get_entry_ext(entry, top_format, source_ext)
+
+        return source_ext if not top_format else self._format_to_ext(top_format)
+
+    def _get_picture_ext(self, url, transform_config, source_ext):
+        """Get expected extension for picture transform."""
+        url_dir = Path(url).parent.name
+        sources = transform_config.get("sources", [])
+
+        for source in sources:
+            src_name = source.get("name")
+            if src_name == url_dir or f"/{src_name}/" in url:
+                return self._get_source_ext(url, source, source_ext)
+
+        return source_ext
+
+    def _get_default_ext(self, transform_config, srcset, top_format, source_ext):
+        """Get extension for default URL in responsive-image."""
+        default = transform_config.get("default")
+
+        if isinstance(default, tuple):
+            return self._format_to_ext(default[1])
+
+        if isinstance(default, str):
+            for entry in srcset:
+                if entry[0] == default:
+                    return self._get_entry_ext(entry, top_format, source_ext)
+
+        return source_ext if not top_format else self._format_to_ext(top_format)
+
+    def _get_source_ext(self, url, source, source_ext):
+        """Get extension for a source in picture transform."""
+        src_format = source.get("output-format")
+        srcset = source.get("srcset", [])
+
+        entry = self._find_matching_srcset_entry(url, srcset)
+        if entry:
+            return self._get_entry_ext(entry, src_format, source_ext)
+
+        return source_ext if not src_format else self._format_to_ext(src_format)
+
+    def _find_matching_srcset_entry(self, url, srcset):
+        """Find the srcset entry that matches the given URL."""
+        for entry in srcset:
+            entry_name = entry[0]
+            # entry may be density specified ("1x") or width specified ("640w")
+            if entry_name in url or entry_name.replace("x", "w") in url:
+                return entry
+        return None
+
+    def _get_entry_ext(self, entry, default_format, source_ext):
+        """Extract extension from a srcset entry tuple."""
+        match entry:
+            case (_, _, str() as fmt):
+                if fmt == "original":
+                    return source_ext
+                return self._format_to_ext(fmt)
+
+        if default_format:
+            return self._format_to_ext(default_format)
+        return source_ext
+
+    def _format_to_ext(self, fmt):
+        """Convert format string to extension."""
+        if not fmt:
+            return None
+        fmt = fmt.lower().lstrip(".")
+        if fmt == "jpeg":
+            fmt = "jpg"
+        return f".{fmt}"
 
 
 @pytest.mark.parametrize("transform_id, transform_config", FORMAT_TRANSFORMS.items())
@@ -1053,6 +1274,13 @@ def test_process_metadata_image(  # noqa: PLR0913
 def generate_test_images():
     settings = get_settings()
     image_count = 0
+
+    for jpg_image_path in FORMAT_TEST_IMAGES_JPG:
+        if not jpg_image_path.exists():
+            png_path = jpg_image_path.with_suffix(".png")
+            if png_path.exists():
+                img = Image.open(png_path).convert("RGB")
+                img.save(jpg_image_path, "JPEG", quality=85)
 
     all_transforms = {**SINGLE_TRANSFORMS, **FORMAT_TRANSFORMS}
 

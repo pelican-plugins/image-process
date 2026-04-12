@@ -78,19 +78,20 @@ URL of the transformed image.
 
 You can also transcode the image from one image format into another, for
 example, from `png` to `webp`. Supported are all image formats the are also
-supported by the underlying pillow-library. This is useful, when you want to
-keep a single large high-resolution image in your repository, but distribute a
-more lightweight, web-optimized image with your website.
+supported by the underlying pillow-library (see [Image File
+Formats](#image-file-formats)). This is useful, when you want to keep a single
+large high-resolution image in your repository, but distribute a more
+lightweight, web-optimized image with your website.
 
 For consistency with other types of transformations described
 below, there is an alternative syntax for the processing instructions:
 
-**FIXME**: Check how and if the format syntax works with these constructs.
 
 ```python
 IMAGE_PROCESS = {
     "thumb": {
         "type": "image",
+        "output-format": "webp"
         "ops": ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
     },
     "article-image": {
@@ -161,9 +162,9 @@ IMAGE_PROCESS = {
         "type": "responsive-image",
         "output-format": "webp",
         "srcset": [
-            ("1x", ["scale_in 800 600 True"]),
+            ("1x", ["scale_in 800 600 True"], "avif"),
             ("2x", ["scale_in 1600 1200 True"]),
-            ("4x", ["scale_in 3200 2400 True"]),
+            ("4x", ["scale_in 3200 2400 True"], "original"),
         ],
         "default": "1x",
     },
@@ -222,6 +223,14 @@ images will be transcoded into `jpg`, however the line `("600w", ["scale_in 600
 can also specify the original format, by using the keyword `original` instead of
 a image file format specification.
 
+Similarly the `crisp` transformation also specifies a top-level output format
+`"output-format": "webp"` which means, that in absence of other specifications,
+the derivative images will be transcoded into the *WebP* image format. However
+within the `srcset` this is overruled: the `1x` derivative image will be
+transcoded into `avif`, the `2x` image will be transcoded into `webp` (as
+specified by `output-format`) and lastly the `4x` image will retain the original
+image format.
+
 In the two examples above, the `default` setting is a string referring to
 one of the images in the `srcset`. However, the `default` value
 could also be a list of operations to generate a different derivative
@@ -269,8 +278,6 @@ To tell *Image Process* to generate the images for a `<picture>`,
 add a `picture` entry to your `IMAGE_PROCESS` dictionary with the
 following syntax:
 
-**FIXME**: Check syntax for transcoding here.
-
 ```python
 IMAGE_PROCESS = {
     "example-pict": {
@@ -278,6 +285,7 @@ IMAGE_PROCESS = {
         "sources": [
             {
                 "name": "default",
+                "output-format": "webp",
                 "media": "(min-width: 640px)",
                 "srcset": [
                     ("640w", ["scale_in 640 480 True"]),
@@ -289,7 +297,7 @@ IMAGE_PROCESS = {
             {
                 "name": "source-1",
                 "srcset": [
-                    ("1x", ["crop 100 100 200 200"]),
+                    ("1x", ["crop 100 100 200 200"], "avif"),
                     ("2x", ["crop 100 100 300 300"]),
                 ]
             },
@@ -309,6 +317,10 @@ the `<img>` inside the `<picture>`. This is the image that will be
 displayed by browsers that do not support the `<picture>` syntax. In
 this example, it will use the image `640w` from the source `default`.
 A list of operations could have been specified instead of `640w`.
+
+Similar to `responsive image` described above, also `<picture>` allows the
+specification of "output-format" and image format extensions like `webp`, `avif`
+and `jpg`.
 
 To generate a responsive `<picture>` for the images in your
 articles, you must add to your article a pseudo `<picture>` tag that

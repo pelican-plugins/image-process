@@ -12,6 +12,7 @@ import pytest
 from pelican.plugins.image_process import (
     ExifTool,
     compute_paths,
+    get_target_filename,
     harvest_images_in_fragment,
     process_image,
     process_metadata,
@@ -71,6 +72,19 @@ SINGLE_TRANSFORMS = {
     "sharpen": ["sharpen"],
 }
 
+FORMAT_TRANSFORMS = {
+    "scale_in_webp": {
+        "type": "image",
+        "ops": ["scale_in 200 250 False"],
+        "output-format": "webp",
+    },
+    "scale_in_avif": {
+        "type": "image",
+        "ops": ["scale_in 200 250 False"],
+        "output-format": "avif",
+    },
+}
+
 # The expected sizes of the transformed images.
 EXPECTED_SIZES = {
     "crop": (300, 200),
@@ -127,6 +141,53 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     # We need to make our tests slightly tolerant because
     # the `detail` and `smooth_more` filters are slightly different in Pillow 10.3+
     # depending on the platform on which they are run.
+    if transformed.mode == "RGB":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+    elif transformed.mode == "RGBA":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+            assert abs(transformed_pixel[3] - expected_pixel[3]) <= 1
+    elif transformed.mode == "L":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel - expected_pixel) <= 1
+    else:
+        raise ValueError(f"Unsupported image mode: {transformed.mode}")
+
+
+@pytest.mark.parametrize("transform_id, transform_config", FORMAT_TRANSFORMS.items())
+@pytest.mark.parametrize("image_path", TRANSFORM_TEST_IMAGES)
+def test_format_conversion(tmp_path, transform_id, transform_config, image_path):
+    """Test format conversion (WebP, AVIF) with binary match vs pre-rendered images."""
+    settings = get_settings()
+
+    image_name = image_path.name
+    target_format = transform_config["output-format"]
+    expected_filename = get_target_filename(image_name, target_format)
+    destination_path = tmp_path.joinpath(transform_id, expected_filename)
+    expected_path = TRANSFORM_RESULTS.joinpath(transform_id, expected_filename)
+
+    process_image(
+        (str(image_path), str(destination_path), transform_config["ops"]), settings
+    )
+
+    transformed = Image.open(destination_path)
+    expected = Image.open(expected_path)
+
+    assert transformed.size == expected.size
+    assert transformed.format.upper() == target_format.upper()
+    assert expected.format.upper() == target_format.upper()
+
     if transformed.mode == "RGB":
         for _, (transformed_pixel, expected_pixel) in enumerate(
             zip(transformed.getdata(), expected.getdata(), strict=False)
@@ -992,24 +1053,43 @@ def test_process_metadata_image(  # noqa: PLR0913
 def generate_test_images():
     settings = get_settings()
     image_count = 0
+
+    all_transforms = {**SINGLE_TRANSFORMS, **FORMAT_TRANSFORMS}
+
     for image_path in TRANSFORM_TEST_IMAGES:
-        for transform_id, transform_params in SINGLE_TRANSFORMS.items():
+        for transform_id, transform_config in all_transforms.items():
+            if isinstance(transform_config, list):
+                ops = transform_config
+                output_format = None
+            else:
+                ops = transform_config.get("ops", [])
+                output_format = transform_config.get("output-format")
+
+            if output_format:
+                dest_filename = get_target_filename(image_path.name, output_format)
+            else:
+                dest_filename = image_path.name
+
             destination_path = str(
-                TRANSFORM_RESULTS.joinpath(transform_id, image_path.name)
+                TRANSFORM_RESULTS.joinpath(transform_id, dest_filename)
             )
             process_image(
                 (
                     str(image_path),
                     destination_path,
-                    transform_params,
+                    ops,
                 ),
                 settings,
             )
             image_count += 1
 
             # Check the size of the transformed image.
-            expected_size = EXPECTED_SIZES.get(transform_id)
+            base_transform_id = transform_id.replace("_webp", "").replace("_avif", "")
+            expected_size = EXPECTED_SIZES.get(base_transform_id)
             transformed = Image.open(destination_path)
             assert expected_size is None or expected_size == transformed.size
+            # Check the format of the transformed image (if specified).
+            if output_format:
+                assert transformed.format.upper() == output_format.upper()
 
     print(f"{image_count} test images generated!")  # noqa: T201

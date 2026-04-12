@@ -724,8 +724,11 @@ is a helper function to do this for you. From the Python REPL:
 ```python
 >>> from pelican.plugins.image_process.test_image_process import generate_test_images
 >>> generate_test_images()
-36 test images generated!
+60 test images generated!
 ```
+
+This generates both standard transform test images (54) and format conversion
+test images (6 for WebP and AVIF).
 
 ## License
 

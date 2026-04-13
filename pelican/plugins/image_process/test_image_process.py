@@ -180,6 +180,14 @@ COMPLEX_FORMAT_TRANSFORMS = {
         ],
         "default": "1x",
     },
+    "resp_no_top": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"], "webp"),
+        ],
+        "default": "1x",
+    },
     "resp_per_entry_mixed": {
         "type": "responsive-image",
         "srcset": [

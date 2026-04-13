@@ -587,6 +587,10 @@ def build_srcset(img, settings, derivative):
 def prepare_image_sources(img, group, settings, derivative):
     """Prepare image sources for the picture tag."""
     process_dir = settings["IMAGE_PROCESS_DIR"]
+    # Compile sources URL. Special source "default" uses the main
+    # image URL. Other sources use the img with classes
+    # [source['name'], 'image-process'].  We also remove the img from
+    # the DOM.
     sources = copy.deepcopy(settings["IMAGE_PROCESS"][derivative]["sources"])
     for s in sources:
         if s["name"] == "default":

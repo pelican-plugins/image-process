@@ -670,6 +670,11 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
                         if entry[0] == default_item_name:
                             default_item_format = get_target_format(entry)
                             break
+                    # fallback to top-level output-format
+                    if default_item_format is None:
+                        default_item_format = settings["IMAGE_PROCESS"][derivative].get(
+                            "output-format"
+                        )
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
@@ -800,6 +805,11 @@ def process_picture(soup, img, group, settings, derivative):
                         if entry[0] == default_item_name:
                             default_item_format = get_target_format(entry)
                             break
+                    # fallback to top-level output-format
+                    if default_item_format is None:
+                        default_item_format = settings["IMAGE_PROCESS"][derivative].get(
+                            "output-format"
+                        )
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"

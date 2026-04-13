@@ -171,6 +171,15 @@ def get_target_format(config, default_format=None):
     return default_format
 
 
+def normalize_shorthand_transform(config):
+    """Normalize shorthand tuple (ops, format) to a dict transform config."""
+    match config:
+        case (ops, str() as format_str) if not isinstance(ops, str):
+            return {"type": "image", "ops": ops, "output-format": format_str}
+
+    raise TypeError(f"Cannot normalize shorthand config: {config}")
+
+
 def get_target_filename(filename, target_format):
     """Return the filename with the target format extension."""
     if not target_format or target_format == "original":
@@ -400,19 +409,25 @@ def harvest_images_in_fragment(fragment, settings):
 
         if isinstance(d, list):
             # Single source image specification.
-            process_img_tag(img, settings, derivative)
+            process_img_tag(img, settings, derivative, d)
+            continue
 
-        elif not isinstance(d, dict):
+        if isinstance(d, tuple):
+            # Handle shorthand tuple format: (ops, format)
+            d = normalize_shorthand_transform(d)
+            # Fall through to dict handling
+
+        if not isinstance(d, dict):
             raise TypeError(
                 f"Derivative {derivative} definition not handled (must be list or dict)"
             )
 
-        elif "type" not in d:
+        if "type" not in d:
             raise RuntimeError(f'"type" is mandatory for {derivative}.')
 
-        elif d["type"] == "image":
+        if d["type"] == "image":
             # Single source image specification.
-            process_img_tag(img, settings, derivative)
+            process_img_tag(img, settings, derivative, d)
 
         elif d["type"] == "responsive-image" and "srcset" not in img.attrs:
             # srcset image specification.
@@ -485,9 +500,11 @@ def compute_paths(image_url, settings, derivative):
     return Path(base_url, source, base_path, filename)
 
 
-def process_img_tag(img, settings, derivative):
+def process_img_tag(img, settings, derivative, process_config=None):
     path = compute_paths(img["src"], settings, derivative)
-    process = settings["IMAGE_PROCESS"][derivative]
+    process = (
+        process_config if process_config else settings["IMAGE_PROCESS"][derivative]
+    )
 
     target_format = get_target_format(process)
     filename = get_target_filename(path.filename, target_format)

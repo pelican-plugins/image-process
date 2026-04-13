@@ -170,6 +170,7 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
 
 
 COMPLEX_FORMAT_TRANSFORMS = {
+    "short_webp": (["scale_in 300 300 True"], "webp"),
     "resp_top_webp": {
         "type": "responsive-image",
         "output-format": "webp",
@@ -293,6 +294,11 @@ class TestComplexFormatTransforms:
 
     def _determine_expected_ext(self, url, transform_config, source_ext):
         """Determine expected extension for a given URL based on transform config."""
+        if isinstance(transform_config, tuple):
+            # Handle shorthand tuple format: (ops, format)
+            _ops, fmt = transform_config
+            return self._format_to_ext(fmt)
+
         transform_type = transform_config["type"]
 
         if transform_type == "responsive-image":

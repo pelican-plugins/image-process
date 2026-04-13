@@ -204,6 +204,15 @@ COMPLEX_FORMAT_TRANSFORMS = {
         ],
         "default": (["scale_in 400 300 True"], "jpg"),
     },
+    "resp_mixed_top_and_entry": {
+        "type": "responsive-image",
+        "output-format": "jpg",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"], "webp"),
+        ],
+        "default": "1x",
+    },
     "picture_formats": {
         "type": "picture",
         "sources": [
@@ -229,16 +238,7 @@ COMPLEX_FORMAT_TRANSFORMS = {
                 ],
             },
         ],
-        "default": ("webp-src", "640w"),
-    },
-    "resp_mixed_top_and_entry": {
-        "type": "responsive-image",
-        "output-format": "jpg",
-        "srcset": [
-            ("1x", ["scale_in 800 600 True"]),
-            ("2x", ["scale_in 1600 1200 True"], "webp"),
-        ],
-        "default": "1x",
+        "default": ("webp-src", "640w", "webp"),
     },
 }
 

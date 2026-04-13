@@ -659,12 +659,17 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         if isinstance(default[1], str):
             default_item_name = default[1]
-            # find format from srcset
-            default_item_format = None
-            for entry in default_source["srcset"]:
-                if entry[0] == default_item_name:
-                    default_item_format = get_target_format(entry)
-                    break
+            # Check for format in position 3: ("default", "640w", "webp")
+            match default:
+                case (_, _, str() as default_item_format):
+                    pass
+                case _:
+                    # find format from srcset
+                    default_item_format = None
+                    for entry in default_source["srcset"]:
+                        if entry[0] == default_item_name:
+                            default_item_format = get_target_format(entry)
+                            break
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
@@ -784,12 +789,17 @@ def process_picture(soup, img, group, settings, derivative):
 
         if isinstance(default[1], str):
             default_item_name = default[1]
-            # find format from srcset
-            default_item_format = None
-            for entry in default_source["srcset"]:
-                if entry[0] == default_item_name:
-                    default_item_format = get_target_format(entry)
-                    break
+            # Check for format in position 3: ("default", "640w", "webp")
+            match default:
+                case (_, _, str() as default_item_format):
+                    pass
+                case _:
+                    # find format from srcset
+                    default_item_format = None
+                    for entry in default_source["srcset"]:
+                        if entry[0] == default_item_name:
+                            default_item_format = get_target_format(entry)
+                            break
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"

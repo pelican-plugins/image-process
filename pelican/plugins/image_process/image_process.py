@@ -682,7 +682,9 @@ def convert_div_to_picture_tag(soup, img, group, settings, derivative):
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
-            default_item_format = get_target_format(default[1])
+            default_item_format = get_target_format(default[1]) or default_source.get(
+                "output-format"
+            )
             ops = default[1][0] if isinstance(default[1], tuple) else default[1]
 
             source = os.path.join(settings["PATH"], default_source["url"][1:])
@@ -817,7 +819,9 @@ def process_picture(soup, img, group, settings, derivative):
 
         elif isinstance(default[1], (list, tuple)):
             default_item_name = "default"
-            default_item_format = get_target_format(default[1])
+            default_item_format = get_target_format(default[1]) or default_source.get(
+                "output-format"
+            )
             ops = default[1][0] if isinstance(default[1], tuple) else default[1]
             source = os.path.join(settings["PATH"], default_source["url"][1:])
             filename = get_target_filename(

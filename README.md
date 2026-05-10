@@ -66,7 +66,7 @@ compute a thumbnail from a larger image:
 
 ```python
 IMAGE_PROCESS = {
-    "article-image": ["scale_in 300 300 True"],
+    "article-image": (["scale_in 300 300 True"], "webp")
     "thumb": ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
 }
 ```
@@ -77,7 +77,7 @@ list of operations specified, and replace the `src` attribute with the
 URL of the transformed image.
 
 You can also transcode the image from one image format into another, for
-example, from `png` to `webp`. Supported are all image formats the are also
+example, from `png` to `webp`. Supported are all image formats that are also
 supported by the underlying pillow-library (see [Image File
 Formats](#image-file-formats)). This is useful, when you want to keep a single
 large high-resolution image in your repository, but distribute a more
@@ -212,16 +212,16 @@ width in pixels of the associated image and must have the suffix
 attribute of the image. This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
-Both, the `crisp` and the `large-photo` definitions above, also demonstrate how
+Both definitions above also demonstrate how
 the input image may be transcoded into another file format. This allows you to
-transcode your original image from - for example - `png` into `webp` for the
+transcode your image from, for example, a `png` original to `webp`
 derivative images. The setting `"output-format": "jpg"` sets the default for the
-derivative images. This default can be overriden in every `srcset`
-specification. In the `large-photo`-example above, by default, all derivative
+derivative images. This default can be overriden in each `srcset`
+specification. In the `large-photo` example above, by default, all derivative
 images will be transcoded into `jpg`, however the line `("600w", ["scale_in 600
-450 True"], "webp"),` will override this for the specified derivative image. You
-can also specify the original format, by using the keyword `original` instead of
-a image file format specification.
+450 True"], "webp"),` will override this for this specific derivative image. You
+can also specify that you want to keep the original format, by using the keyword `original` instead of
+an image file format specification.
 
 Similarly the `crisp` transformation also specifies a top-level output format
 `"output-format": "webp"` which means, that in absence of other specifications,
@@ -318,7 +318,7 @@ displayed by browsers that do not support the `<picture>` syntax. In
 this example, it will use the image `640w` from the source `default`.
 A list of operations could have been specified instead of `640w`.
 
-Similar to `responsive image` described above, also `<picture>` allows the
+Similar to `responsive image` described above, `<picture>` also allows the
 specification of "output-format" and image format extensions like `webp`, `avif`
 and `jpg`.
 
@@ -469,14 +469,14 @@ IMAGE_PROCESS = {
 
 ### Image File Formats
 
-*Image Process* uses python's pillow library (PIL) to read and write files. The
-file formats, that pillow can read and write depend on libraries/plugins that
+*Image Process* uses Python's Pillow library (PIL) to read and write files. The
+file formats that Pillow can read and write depend on libraries/plugins that
 may or may not be installed on a particular system. While most common image
 formats will likely work out of the box (`png`, `jpg`, `jpeg`, `gif`, `tif`,
 `webp`), uncommon formats may cause issues depending on the system you are
 working on.
 
-To specify an image format for the derivative image, pillow will infer the image
+To specify an image format for the derivative image, Pillow will infer the image
 format from the file extension you specify. This follows common conventions, for
 example: the extensions `j2c`, `j2k`, `jp2` and `jpx` will all result in a
 *JPEG2000* file, while `jpe`, `jpg` and `jpeg` will produce a *JPEG* derivative
@@ -522,7 +522,7 @@ give good results.
 
 The *SVG* image format is omitted on purpose from the list above; it is a
 *vector* image format (as opposed to the others, which are *raster* formats),
-that is best used for logos and illustrations and you should not blindly convert
+that is best used for logos and illustrations. You should not blindly convert
 images (especially not photographs!) to this format unless you are sure what you
 are doing. For more information on how vector image formats compare to raster
 image formats see this [Wikipedia

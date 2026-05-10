@@ -400,6 +400,114 @@ class TestComplexFormatTransforms:
         return f".{fmt}"
 
 
+PICTURE_DEFAULT_FORMAT_FALLBACK = {
+    "pic_default_fmt_fallback": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "main",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+        ],
+        "default": ("main", ["scale_in 500 500 True"]),
+    },
+    "pic_default_fmt_fallback_div": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "main",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+        ],
+        "default": ("main", ["scale_in 500 500 True"]),
+    },
+}
+
+
+@pytest.mark.parametrize("transform_id", ["pic_default_fmt_fallback"])
+def test_picture_default_falls_back_to_source_format_when_using_ops_list(
+    mocker, transform_id
+):
+    """Picture default (source_name, ops_list) must fall back to source output-format.
+
+    When default is a 2-tuple of (source_name, ops_list) and the source has
+    output-format set (e.g. "webp"), get_target_format(ops_list) returns None
+    because a plain ops list carries no format info. Without a fallback to
+    the source's output-format, the default image silently keeps its original
+    extension instead of being transcoded.
+
+    Regression test for the bug at image_process.py:~820 (process_picture).
+    """
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
+
+    settings = get_settings(
+        IMAGE_PROCESS=PICTURE_DEFAULT_FORMAT_FALLBACK,
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    tag = (
+        "<picture>"
+        '<source class="main" src="/images/pelican.jpg"/>'
+        '<img class="image-process-pic_default_fmt_fallback" '
+        'src="/images/pelican.jpg"/>'
+        "</picture>"
+    )
+
+    result = harvest_images_in_fragment(tag, settings)
+    soup = BeautifulSoup(result, "html.parser")
+
+    img_src = soup.img["src"]
+    assert img_src.endswith(".webp"), (
+        f"Expected default img src to end with .webp "
+        f"(source has output-format: webp), got: {img_src}"
+    )
+
+
+@pytest.mark.parametrize("transform_id", ["pic_default_fmt_fallback_div"])
+def test_div_picture_default_falls_back_to_source_format_when_using_ops_list(
+    mocker, transform_id
+):
+    """Same as above, but for the div-to-picture code path (convert_div_to_picture_tag).
+
+    Regression test for the bug at image_process.py:~685 (convert_div_to_picture_tag).
+    """
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
+
+    settings = get_settings(
+        IMAGE_PROCESS=PICTURE_DEFAULT_FORMAT_FALLBACK,
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    tag = (
+        '<div class="figure">'
+        '<img alt="pelican" class="image-process-pic_default_fmt_fallback_div" '
+        'src="/images/pelican.jpg"/>'
+        '<p class="caption">A pelican</p>'
+        '<div class="legend">'
+        '<img alt="Other view" class="image-process main" '
+        'src="/images/pelican-closeup.jpg"/>'
+        "</div>"
+        "</div>"
+    )
+
+    result = harvest_images_in_fragment(tag, settings)
+    soup = BeautifulSoup(result, "html.parser")
+
+    img_src = soup.img["src"]
+    assert img_src.endswith(".webp"), (
+        f"Expected default img src to end with .webp "
+        f"(source has output-format: webp), got: {img_src}"
+    )
+
+
 @pytest.mark.parametrize("transform_id, transform_config", FORMAT_TRANSFORMS.items())
 @pytest.mark.parametrize("image_path", TRANSFORM_TEST_IMAGES)
 def test_format_conversion(tmp_path, transform_id, transform_config, image_path):

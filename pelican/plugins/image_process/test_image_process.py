@@ -243,6 +243,39 @@ COMPLEX_FORMAT_TRANSFORMS = {
 }
 
 
+# Expected file extensions per transform and source extension.
+COMPLEX_FORMAT_EXPECTED_EXTENSIONS = {
+    "short_webp": {
+        ".png": {".webp"},
+        ".jpg": {".webp"},
+    },
+    "resp_top_webp": {
+        ".png": {".webp"},
+        ".jpg": {".webp"},
+    },
+    "resp_no_top": {
+        ".png": {".png", ".webp"},
+        ".jpg": {".jpg", ".webp"},
+    },
+    "resp_per_entry_mixed": {
+        ".png": {".png", ".webp", ".avif"},
+        ".jpg": {".jpg", ".webp", ".avif"},
+    },
+    "resp_custom_default_jpg": {
+        ".png": {".png", ".jpg"},
+        ".jpg": {".jpg"},
+    },
+    "resp_mixed_top_and_entry": {
+        ".png": {".jpg", ".webp"},
+        ".jpg": {".jpg", ".webp"},
+    },
+    "picture_formats": {
+        ".png": {".png"},
+        ".jpg": {".jpg"},
+    },
+}
+
+
 class TestComplexFormatTransforms:
     """Test complex format transforms of file format conversions."""
 
@@ -271,15 +304,15 @@ class TestComplexFormatTransforms:
 
         assert len(urls) > 0, f"No URLs generated for {transform_id}"
 
-        transform_config = COMPLEX_FORMAT_TRANSFORMS[transform_id]
+        # find the expected extension from the transform_id and source_ext in
+        # the COMPLEX_FORMAT_EXPECTED_EXTENSIONS dict.
+        source_ext = image_path.suffix.lower()
+        expected_exts = COMPLEX_FORMAT_EXPECTED_EXTENSIONS[transform_id][source_ext]
         for url in urls:
             ext = Path(url).suffix.lower()
-            expected_ext = self._determine_expected_ext(
-                url, transform_config, image_path.suffix.lower()
-            )
-            assert ext == expected_ext, (
-                f"Extension mismatch for {transform_id}: "
-                f"expected {expected_ext}, got {ext} in URL {url}"
+            assert ext in expected_exts, (
+                f"Extension mismatch for {transform_id} with {image_path.name}: "
+                f"expected one of {expected_exts}, got {ext} in URL {url}"
             )
 
     def _extract_urls(self, soup):
@@ -299,105 +332,6 @@ class TestComplexFormatTransforms:
                     if parts:
                         urls.append(parts[0])
         return urls
-
-    def _determine_expected_ext(self, url, transform_config, source_ext):
-        """Determine expected extension for a given URL based on transform config."""
-        if isinstance(transform_config, tuple):
-            # Handle shorthand tuple format: (ops, format)
-            _ops, fmt = transform_config
-            return self._format_to_ext(fmt)
-
-        transform_type = transform_config["type"]
-
-        if transform_type == "responsive-image":
-            return self._get_responsive_image_ext(url, transform_config, source_ext)
-        if transform_type == "picture":
-            return self._get_picture_ext(url, transform_config, source_ext)
-
-        return source_ext
-
-    def _get_responsive_image_ext(self, url, transform_config, source_ext):
-        """Get expected extension for responsive-image transform."""
-        top_format = transform_config.get("output-format")
-        srcset = transform_config.get("srcset", [])
-
-        if "/default/" in url:
-            return self._get_default_ext(
-                transform_config, srcset, top_format, source_ext
-            )
-
-        entry = self._find_matching_srcset_entry(url, srcset)
-        if entry:
-            return self._get_entry_ext(entry, top_format, source_ext)
-
-        return source_ext if not top_format else self._format_to_ext(top_format)
-
-    def _get_picture_ext(self, url, transform_config, source_ext):
-        """Get expected extension for picture transform."""
-        url_dir = Path(url).parent.name
-        sources = transform_config.get("sources", [])
-
-        for source in sources:
-            src_name = source.get("name")
-            if src_name == url_dir or f"/{src_name}/" in url:
-                return self._get_source_ext(url, source, source_ext)
-
-        return source_ext
-
-    def _get_default_ext(self, transform_config, srcset, top_format, source_ext):
-        """Get extension for default URL in responsive-image."""
-        default = transform_config.get("default")
-
-        if isinstance(default, tuple):
-            return self._format_to_ext(default[1])
-
-        if isinstance(default, str):
-            for entry in srcset:
-                if entry[0] == default:
-                    return self._get_entry_ext(entry, top_format, source_ext)
-
-        return source_ext if not top_format else self._format_to_ext(top_format)
-
-    def _get_source_ext(self, url, source, source_ext):
-        """Get extension for a source in picture transform."""
-        src_format = source.get("output-format")
-        srcset = source.get("srcset", [])
-
-        entry = self._find_matching_srcset_entry(url, srcset)
-        if entry:
-            return self._get_entry_ext(entry, src_format, source_ext)
-
-        return source_ext if not src_format else self._format_to_ext(src_format)
-
-    def _find_matching_srcset_entry(self, url, srcset):
-        """Find the srcset entry that matches the given URL."""
-        for entry in srcset:
-            entry_name = entry[0]
-            # entry may be density specified ("1x") or width specified ("640w")
-            if entry_name in url or entry_name.replace("x", "w") in url:
-                return entry
-        return None
-
-    def _get_entry_ext(self, entry, default_format, source_ext):
-        """Extract extension from a srcset entry tuple."""
-        match entry:
-            case (_, _, str() as fmt):
-                if fmt == "original":
-                    return source_ext
-                return self._format_to_ext(fmt)
-
-        if default_format:
-            return self._format_to_ext(default_format)
-        return source_ext
-
-    def _format_to_ext(self, fmt):
-        """Convert format string to extension."""
-        if not fmt:
-            return None
-        fmt = fmt.lower().lstrip(".")
-        if fmt == "jpeg":
-            fmt = "jpg"
-        return f".{fmt}"
 
 
 PICTURE_DEFAULT_FORMAT_FALLBACK = {

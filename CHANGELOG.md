@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+3.4.0 - 2026-06-12
+------------------
+
+Add setting to specify image output file format to automatically transcode source images.
+
+Contributed by [mluisser](https://github.com/cargocultprogramming) via [PR #102](https://github.com/pelican-plugins/image-process/pull/102/)
+
+
 3.3.0 - 2025-11-18
 ------------------
 

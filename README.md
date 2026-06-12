@@ -78,10 +78,10 @@ URL of the transformed image.
 
 You can also transcode the image from one image format into another, for
 example, from `png` to `webp`. Supported are all image formats that are also
-supported by the underlying pillow-library (see [Image File
-Formats](#image-file-formats)). This is useful, when you want to keep a single
+supported by the underlying Pillow library (see [Image File
+Formats](#image-file-formats)). This is useful when you want to keep a single
 large high-resolution image in your repository, but distribute a more
-lightweight, web-optimized image with your website.
+lightweight, web-optimized image with your web site.
 
 For consistency with other types of transformations described
 below, there is an alternative syntax for the processing instructions:
@@ -220,15 +220,15 @@ derivative images. This default can be overriden in each `srcset`
 specification. In the `large-photo` example above, by default, all derivative
 images will be transcoded into `jpg`, however the line `("600w", ["scale_in 600
 450 True"], "webp"),` will override this for this specific derivative image. You
-can also specify that you want to keep the original format, by using the keyword `original` instead of
-an image file format specification.
+can also specify that you want to keep the original format, by using the keyword
+`original` instead of an image file format specification.
 
-Similarly the `crisp` transformation also specifies a top-level output format
-`"output-format": "webp"` which means, that in absence of other specifications,
-the derivative images will be transcoded into the *WebP* image format. However
+Similarly, the `crisp` transformation also specifies a top-level output format
+`"output-format": "webp"`, which means that in absence of other specifications,
+the derivative images will be transcoded into the *WebP* image format. However,
 within the `srcset` this is overruled: the `1x` derivative image will be
 transcoded into `avif`, the `2x` image will be transcoded into `webp` (as
-specified by `output-format`) and lastly the `4x` image will retain the original
+specified by `output-format`), and lastly the `4x` image will retain the original
 image format.
 
 In the two examples above, the `default` setting is a string referring to
@@ -319,8 +319,8 @@ this example, it will use the image `640w` from the source `default`.
 A list of operations could have been specified instead of `640w`.
 
 Similar to `responsive image` described above, `<picture>` also allows the
-specification of "output-format" and image format extensions like `webp`, `avif`
-and `jpg`.
+specification of "output-format" and image format extensions like `webp`,
+`avif`, and `jpg`.
 
 To generate a responsive `<picture>` for the images in your
 articles, you must add to your article a pseudo `<picture>` tag that
@@ -478,12 +478,12 @@ working on.
 
 To specify an image format for the derivative image, Pillow will infer the image
 format from the file extension you specify. This follows common conventions, for
-example: the extensions `j2c`, `j2k`, `jp2` and `jpx` will all result in a
-*JPEG2000* file, while `jpe`, `jpg` and `jpeg` will produce a *JPEG* derivative
+example: the extensions `j2c`, `j2k`, `jp2`, and `jpx` will all result in a
+*JPEG2000* file, while `jpe`, `jpg`, and `jpeg` will produce a *JPEG* derivative
 file.
 
 To see a full list of extensions and file formats available on your system, run
-the following python snippet:
+the following Python snippet:
 
 ```python
 from PIL import Image
@@ -497,16 +497,16 @@ for ext, fmt in sorted(Image.EXTENSION.items()):
     print(f"{ext.ljust(10)} -> {fmt.ljust(10)} {readonly}{writeonly}")
 ```
 
-Not all image formats can be read *and* written. For example the *PDF* image
-format can be written with PIL, but cannot be read. Consequently, it can be used
-as `output-format` by *Image Process* but does not work when you attempt to use
-it as the original input format.
+Not all image formats can be read *and* written. For example, the *PDF* image
+format can be written with Pillow, but cannot be read. Consequently, it can be
+used as `output-format` by *Image Process* but does not work when you attempt to
+use it as the original input format.
 
-The ability to *display* a particular image format, depends on the browser.
+The ability to *display* a particular image format depends on the browser.
 Modern browsers will typically support the following formats: JPEG, PNG, GIF,
 SVG, WebP, AVIF (and ICO).
 
-For displaying images on your pelican website consider the following output formats:
+For displaying images on your Pelican web site consider the following output formats:
 
 | Format | Best For... | Browser Support |
 |---|---|---|
@@ -516,7 +516,7 @@ For displaying images on your pelican website consider the following output form
 | AVIF | All-purpose images (smaller size than WebP) | ~94% (latest) |
 | GIF | Simple, low-resolution animations. | 100% |
 
-For most use cases, selecting either *WebP* or *AVIF* as output format (setting
+For most use cases, selecting either *AVIF* or *WebP* as output format (setting
 `output-format`), with a fallback (setting `default`) of *JPEG* or *PNG* will
 give good results.
 
@@ -525,7 +525,7 @@ The *SVG* image format is omitted on purpose from the list above; it is a
 that is best used for logos and illustrations. You should not blindly convert
 images (especially not photographs!) to this format unless you are sure what you
 are doing. For more information on how vector image formats compare to raster
-image formats see this [Wikipedia
+image formats, see this [Wikipedia
 article](https://en.wikipedia.org/wiki/Vector_graphics).
 
 ### Additional Settings

@@ -1,3 +1,3 @@
 Release type: minor
 
-Feature: Specify output file format of images to transcode them automatically.
+Add setting to specify image output file format to automatically transcode source images.

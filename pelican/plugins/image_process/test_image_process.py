@@ -12,6 +12,7 @@ import pytest
 from pelican.plugins.image_process import (
     ExifTool,
     compute_paths,
+    get_target_filename,
     harvest_images_in_fragment,
     process_image,
     process_metadata,
@@ -47,6 +48,10 @@ NOEXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("noexif", f"pelican-bird.{ext}").resolve()
     for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
+FORMAT_TEST_IMAGES_JPG = [
+    TEST_DATA.joinpath(f"{file}.jpg").resolve()
+    for file in ["pelican-bird", "black-borders"]
+]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
@@ -69,6 +74,19 @@ SINGLE_TRANSFORMS = {
     "smooth": ["smooth"],
     "smooth_more": ["smooth_more"],
     "sharpen": ["sharpen"],
+}
+
+FORMAT_TRANSFORMS = {
+    "scale_in_webp": {
+        "type": "image",
+        "ops": ["scale_in 200 250 False"],
+        "output-format": "webp",
+    },
+    "scale_in_avif": {
+        "type": "image",
+        "ops": ["scale_in 200 250 False"],
+        "output-format": "avif",
+    },
 }
 
 # The expected sizes of the transformed images.
@@ -127,6 +145,326 @@ def test_all_transforms(tmp_path, transform_id, transform_params, image_path):
     # We need to make our tests slightly tolerant because
     # the `detail` and `smooth_more` filters are slightly different in Pillow 10.3+
     # depending on the platform on which they are run.
+    if transformed.mode == "RGB":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+    elif transformed.mode == "RGBA":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel[0] - expected_pixel[0]) <= 1
+            assert abs(transformed_pixel[1] - expected_pixel[1]) <= 1
+            assert abs(transformed_pixel[2] - expected_pixel[2]) <= 1
+            assert abs(transformed_pixel[3] - expected_pixel[3]) <= 1
+    elif transformed.mode == "L":
+        for _, (transformed_pixel, expected_pixel) in enumerate(
+            zip(transformed.getdata(), expected.getdata(), strict=False)
+        ):
+            assert abs(transformed_pixel - expected_pixel) <= 1
+    else:
+        raise ValueError(f"Unsupported image mode: {transformed.mode}")
+
+
+COMPLEX_FORMAT_TRANSFORMS = {
+    "short_webp": (["scale_in 300 300 True"], "webp"),
+    "resp_top_webp": {
+        "type": "responsive-image",
+        "output-format": "webp",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"]),
+        ],
+        "default": "1x",
+    },
+    "resp_no_top": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"], "webp"),
+        ],
+        "default": "1x",
+    },
+    "resp_per_entry_mixed": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"], "webp"),
+            ("2x", ["scale_in 1600 1200 True"], "avif"),
+            ("4x", ["scale_in 3200 2400 True"], "original"),
+        ],
+        "default": "1x",
+    },
+    "resp_custom_default_jpg": {
+        "type": "responsive-image",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+        ],
+        "default": (["scale_in 400 300 True"], "jpg"),
+    },
+    "resp_mixed_top_and_entry": {
+        "type": "responsive-image",
+        "output-format": "jpg",
+        "srcset": [
+            ("1x", ["scale_in 800 600 True"]),
+            ("2x", ["scale_in 1600 1200 True"], "webp"),
+        ],
+        "default": "1x",
+    },
+    "picture_formats": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "webp-src",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                    ("1024w", ["scale_in 1024 768 True"]),
+                ],
+            },
+            {
+                "name": "avif-src",
+                "output-format": "avif",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+            {
+                "name": "orig-src",
+                "srcset": [
+                    ("1x", ["crop 100 100 200 200"], "original"),
+                ],
+            },
+        ],
+        "default": ("webp-src", "640w", "webp"),
+    },
+}
+
+
+# Expected file extensions per transform and source extension.
+COMPLEX_FORMAT_EXPECTED_EXTENSIONS = {
+    "short_webp": {
+        ".png": {".webp"},
+        ".jpg": {".webp"},
+    },
+    "resp_top_webp": {
+        ".png": {".webp"},
+        ".jpg": {".webp"},
+    },
+    "resp_no_top": {
+        ".png": {".png", ".webp"},
+        ".jpg": {".jpg", ".webp"},
+    },
+    "resp_per_entry_mixed": {
+        ".png": {".png", ".webp", ".avif"},
+        ".jpg": {".jpg", ".webp", ".avif"},
+    },
+    "resp_custom_default_jpg": {
+        ".png": {".png", ".jpg"},
+        ".jpg": {".jpg"},
+    },
+    "resp_mixed_top_and_entry": {
+        ".png": {".jpg", ".webp"},
+        ".jpg": {".jpg", ".webp"},
+    },
+    "picture_formats": {
+        ".png": {".png"},
+        ".jpg": {".jpg"},
+    },
+}
+
+
+class TestComplexFormatTransforms:
+    """Test complex format transforms of file format conversions."""
+
+    @pytest.mark.parametrize("transform_id", COMPLEX_FORMAT_TRANSFORMS.keys())
+    @pytest.mark.parametrize(
+        "image_path", TRANSFORM_TEST_IMAGES + FORMAT_TEST_IMAGES_JPG
+    )
+    def test_complex_format_transforms(self, tmp_path, transform_id, image_path):
+        """Test complex format transforms generate correct output extensions.
+
+        This test verifies that the generated image URLs have the expected
+        image format extensions based on the transform configuration, including
+        handling of default entries and per-entry format specifications, but
+        excluding verification of the actual image content or format.
+        """
+        settings = get_settings(
+            IMAGE_PROCESS=COMPLEX_FORMAT_TRANSFORMS, IMAGE_PROCESS_DIR="transformderivs"
+        )
+
+        image_src = f"/tmp/{image_path.name}"
+        tag = f'<img class="image-process-{transform_id}" src="{image_src}"/>'
+
+        result = harvest_images_in_fragment(tag, settings)
+        soup = BeautifulSoup(result, "html.parser")
+        urls = self._extract_urls(soup)
+
+        assert len(urls) > 0, f"No URLs generated for {transform_id}"
+
+        # find the expected extension from the transform_id and source_ext in
+        # the COMPLEX_FORMAT_EXPECTED_EXTENSIONS dict.
+        source_ext = image_path.suffix.lower()
+        expected_exts = COMPLEX_FORMAT_EXPECTED_EXTENSIONS[transform_id][source_ext]
+        for url in urls:
+            ext = Path(url).suffix.lower()
+            assert ext in expected_exts, (
+                f"Extension mismatch for {transform_id} with {image_path.name}: "
+                f"expected one of {expected_exts}, got {ext} in URL {url}"
+            )
+
+    def _extract_urls(self, soup):
+        """Extract all image URLs from parsed HTML soup."""
+        urls = []
+        if soup.img.get("src"):
+            urls.append(soup.img["src"])
+        if soup.img.get("srcset"):
+            for item in soup.img["srcset"].split(","):
+                parts = item.strip().split()
+                if parts:
+                    urls.append(parts[0])
+        for source in soup.find_all("source"):
+            if source.get("srcset"):
+                for item in source["srcset"].split(","):
+                    parts = item.strip().split()
+                    if parts:
+                        urls.append(parts[0])
+        return urls
+
+
+PICTURE_DEFAULT_FORMAT_FALLBACK = {
+    "pic_default_fmt_fallback": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "main",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+        ],
+        "default": ("main", ["scale_in 500 500 True"]),
+    },
+    "pic_default_fmt_fallback_div": {
+        "type": "picture",
+        "sources": [
+            {
+                "name": "main",
+                "output-format": "webp",
+                "srcset": [
+                    ("640w", ["scale_in 640 480 True"]),
+                ],
+            },
+        ],
+        "default": ("main", ["scale_in 500 500 True"]),
+    },
+}
+
+
+@pytest.mark.parametrize("transform_id", ["pic_default_fmt_fallback"])
+def test_picture_default_falls_back_to_source_format_when_using_ops_list(
+    mocker, transform_id
+):
+    """Picture default (source_name, ops_list) must fall back to source output-format.
+
+    When default is a 2-tuple of (source_name, ops_list) and the source has
+    output-format set (e.g. "webp"), get_target_format(ops_list) returns None
+    because a plain ops list carries no format info. Without a fallback to
+    the source's output-format, the default image silently keeps its original
+    extension instead of being transcoded.
+
+    Regression test for the bug at image_process.py:~820 (process_picture).
+    """
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
+
+    settings = get_settings(
+        IMAGE_PROCESS=PICTURE_DEFAULT_FORMAT_FALLBACK,
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    tag = (
+        "<picture>"
+        '<source class="main" src="/images/pelican.jpg"/>'
+        '<img class="image-process-pic_default_fmt_fallback" '
+        'src="/images/pelican.jpg"/>'
+        "</picture>"
+    )
+
+    result = harvest_images_in_fragment(tag, settings)
+    soup = BeautifulSoup(result, "html.parser")
+
+    img_src = soup.img["src"]
+    assert img_src.endswith(".webp"), (
+        f"Expected default img src to end with .webp "
+        f"(source has output-format: webp), got: {img_src}"
+    )
+
+
+@pytest.mark.parametrize("transform_id", ["pic_default_fmt_fallback_div"])
+def test_div_picture_default_falls_back_to_source_format_when_using_ops_list(
+    mocker, transform_id
+):
+    """Same as above, but for the div-to-picture code path (convert_div_to_picture_tag).
+
+    Regression test for the bug at image_process.py:~685 (convert_div_to_picture_tag).
+    """
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    process.return_value = (512, 384)
+
+    settings = get_settings(
+        IMAGE_PROCESS=PICTURE_DEFAULT_FORMAT_FALLBACK,
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    tag = (
+        '<div class="figure">'
+        '<img alt="pelican" class="image-process-pic_default_fmt_fallback_div" '
+        'src="/images/pelican.jpg"/>'
+        '<p class="caption">A pelican</p>'
+        '<div class="legend">'
+        '<img alt="Other view" class="image-process main" '
+        'src="/images/pelican-closeup.jpg"/>'
+        "</div>"
+        "</div>"
+    )
+
+    result = harvest_images_in_fragment(tag, settings)
+    soup = BeautifulSoup(result, "html.parser")
+
+    img_src = soup.img["src"]
+    assert img_src.endswith(".webp"), (
+        f"Expected default img src to end with .webp "
+        f"(source has output-format: webp), got: {img_src}"
+    )
+
+
+@pytest.mark.parametrize("transform_id, transform_config", FORMAT_TRANSFORMS.items())
+@pytest.mark.parametrize("image_path", TRANSFORM_TEST_IMAGES)
+def test_format_conversion(tmp_path, transform_id, transform_config, image_path):
+    """Test format conversion (WebP, AVIF) with binary match vs pre-rendered images."""
+    settings = get_settings()
+
+    image_name = image_path.name
+    target_format = transform_config["output-format"]
+    expected_filename = get_target_filename(image_name, target_format)
+    destination_path = tmp_path.joinpath(transform_id, expected_filename)
+    expected_path = TRANSFORM_RESULTS.joinpath(transform_id, expected_filename)
+
+    process_image(
+        (str(image_path), str(destination_path), transform_config["ops"]), settings
+    )
+
+    transformed = Image.open(destination_path)
+    expected = Image.open(expected_path)
+
+    assert transformed.size == expected.size
+    assert transformed.format.upper() == target_format.upper()
+    assert expected.format.upper() == target_format.upper()
+
     if transformed.mode == "RGB":
         for _, (transformed_pixel, expected_pixel) in enumerate(
             zip(transformed.getdata(), expected.getdata(), strict=False)
@@ -992,24 +1330,50 @@ def test_process_metadata_image(  # noqa: PLR0913
 def generate_test_images():
     settings = get_settings()
     image_count = 0
+
+    for jpg_image_path in FORMAT_TEST_IMAGES_JPG:
+        if not jpg_image_path.exists():
+            png_path = jpg_image_path.with_suffix(".png")
+            if png_path.exists():
+                img = Image.open(png_path).convert("RGB")
+                img.save(jpg_image_path, "JPEG", quality=85)
+
+    all_transforms = {**SINGLE_TRANSFORMS, **FORMAT_TRANSFORMS}
+
     for image_path in TRANSFORM_TEST_IMAGES:
-        for transform_id, transform_params in SINGLE_TRANSFORMS.items():
+        for transform_id, transform_config in all_transforms.items():
+            if isinstance(transform_config, list):
+                ops = transform_config
+                output_format = None
+            else:
+                ops = transform_config.get("ops", [])
+                output_format = transform_config.get("output-format")
+
+            if output_format:
+                dest_filename = get_target_filename(image_path.name, output_format)
+            else:
+                dest_filename = image_path.name
+
             destination_path = str(
-                TRANSFORM_RESULTS.joinpath(transform_id, image_path.name)
+                TRANSFORM_RESULTS.joinpath(transform_id, dest_filename)
             )
             process_image(
                 (
                     str(image_path),
                     destination_path,
-                    transform_params,
+                    ops,
                 ),
                 settings,
             )
             image_count += 1
 
             # Check the size of the transformed image.
-            expected_size = EXPECTED_SIZES.get(transform_id)
+            base_transform_id = transform_id.replace("_webp", "").replace("_avif", "")
+            expected_size = EXPECTED_SIZES.get(base_transform_id)
             transformed = Image.open(destination_path)
             assert expected_size is None or expected_size == transformed.size
+            # Check the format of the transformed image (if specified).
+            if output_format:
+                assert transformed.format.upper() == output_format.upper()
 
     print(f"{image_count} test images generated!")  # noqa: T201

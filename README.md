@@ -19,6 +19,8 @@ by generating multiple derivative images from one or more sources.
 
 *Image Process* will not overwrite your original images.
 
+![Image Process overview](image-process-overview.svg)
+
 ## Installation
 
 The easiest way to install *Image Process* is via Pip. This
@@ -64,7 +66,7 @@ compute a thumbnail from a larger image:
 
 ```python
 IMAGE_PROCESS = {
-    "article-image": ["scale_in 300 300 True"],
+    "article-image": (["scale_in 300 300 True"], "webp")
     "thumb": ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
 }
 ```
@@ -74,13 +76,22 @@ referred to by the `src` attribute of an `<img>` according to the
 list of operations specified, and replace the `src` attribute with the
 URL of the transformed image.
 
+You can also transcode the image from one image format into another, for
+example, from `png` to `webp`. Supported are all image formats that are also
+supported by the underlying Pillow library (see [Image File
+Formats](#image-file-formats)). This is useful when you want to keep a single
+large high-resolution image in your repository, but distribute a more
+lightweight, web-optimized image with your web site.
+
 For consistency with other types of transformations described
 below, there is an alternative syntax for the processing instructions:
+
 
 ```python
 IMAGE_PROCESS = {
     "thumb": {
         "type": "image",
+        "output-format": "webp"
         "ops": ["crop 0 0 50% 50%", "scale_out 150 150 True", "crop 0 0 150 150"],
     },
     "article-image": {
@@ -149,15 +160,17 @@ dictionary, with the following syntax:
 IMAGE_PROCESS = {
     "crisp": {
         "type": "responsive-image",
+        "output-format": "webp",
         "srcset": [
-            ("1x", ["scale_in 800 600 True"]),
+            ("1x", ["scale_in 800 600 True"], "avif"),
             ("2x", ["scale_in 1600 1200 True"]),
-            ("4x", ["scale_in 3200 2400 True"]),
+            ("4x", ["scale_in 3200 2400 True"], "original"),
         ],
         "default": "1x",
     },
     "large-photo": {
         "type": "responsive-image",
+        "output-format": "jpg",
         "sizes": (
             "(min-width: 1200px) 800px, "
             "(min-width: 992px) 650px, "
@@ -165,9 +178,9 @@ IMAGE_PROCESS = {
             "100vw"
         ),
         "srcset": [
-            ("600w", ["scale_in 600 450 True"]),
+            ("600w", ["scale_in 600 450 True"], "webp"),
             ("800w", ["scale_in 800 600 True"]),
-            ("1600w", ["scale_in 1600 1200 True"]),
+            ("1600w", ["scale_in 1600 1200 True"], "original"),
         ],
         "default": "800w",
     },
@@ -198,6 +211,25 @@ width in pixels of the associated image and must have the suffix
 `w`. The `default` setting specifies the image to use to replace the `src`
 attribute of the image. This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
+
+Both definitions above also demonstrate how
+the input image may be transcoded into another file format. This allows you to
+transcode your image from, for example, a `png` original to `webp`
+derivative images. The setting `"output-format": "jpg"` sets the default for the
+derivative images. This default can be overriden in each `srcset`
+specification. In the `large-photo` example above, by default, all derivative
+images will be transcoded into `jpg`, however the line `("600w", ["scale_in 600
+450 True"], "webp"),` will override this for this specific derivative image. You
+can also specify that you want to keep the original format, by using the keyword
+`original` instead of an image file format specification.
+
+Similarly, the `crisp` transformation also specifies a top-level output format
+`"output-format": "webp"`, which means that in absence of other specifications,
+the derivative images will be transcoded into the *WebP* image format. However,
+within the `srcset` this is overruled: the `1x` derivative image will be
+transcoded into `avif`, the `2x` image will be transcoded into `webp` (as
+specified by `output-format`), and lastly the `4x` image will retain the original
+image format.
 
 In the two examples above, the `default` setting is a string referring to
 one of the images in the `srcset`. However, the `default` value
@@ -253,6 +285,7 @@ IMAGE_PROCESS = {
         "sources": [
             {
                 "name": "default",
+                "output-format": "webp",
                 "media": "(min-width: 640px)",
                 "srcset": [
                     ("640w", ["scale_in 640 480 True"]),
@@ -264,7 +297,7 @@ IMAGE_PROCESS = {
             {
                 "name": "source-1",
                 "srcset": [
-                    ("1x", ["crop 100 100 200 200"]),
+                    ("1x", ["crop 100 100 200 200"], "avif"),
                     ("2x", ["crop 100 100 300 300"]),
                 ]
             },
@@ -284,6 +317,10 @@ the `<img>` inside the `<picture>`. This is the image that will be
 displayed by browsers that do not support the `<picture>` syntax. In
 this example, it will use the image `640w` from the source `default`.
 A list of operations could have been specified instead of `640w`.
+
+Similar to `responsive image` described above, `<picture>` also allows the
+specification of "output-format" and image format extensions like `webp`,
+`avif`, and `jpg`.
 
 To generate a responsive `<picture>` for the images in your
 articles, you must add to your article a pseudo `<picture>` tag that
@@ -429,6 +466,67 @@ IMAGE_PROCESS = {
     "face-thumbnail": [crop_face, "scale_out 150 150 True"]
 }
 ```
+
+### Image File Formats
+
+*Image Process* uses Python's Pillow library (PIL) to read and write files. The
+file formats that Pillow can read and write depend on libraries/plugins that
+may or may not be installed on a particular system. While most common image
+formats will likely work out of the box (`png`, `jpg`, `jpeg`, `gif`, `tif`,
+`webp`), uncommon formats may cause issues depending on the system you are
+working on.
+
+To specify an image format for the derivative image, Pillow will infer the image
+format from the file extension you specify. This follows common conventions, for
+example: the extensions `j2c`, `j2k`, `jp2`, and `jpx` will all result in a
+*JPEG2000* file, while `jpe`, `jpg`, and `jpeg` will produce a *JPEG* derivative
+file.
+
+To see a full list of extensions and file formats available on your system, run
+the following Python snippet:
+
+```python
+from PIL import Image
+
+# Map every available image extension to its format
+Image.init()
+print(f"{'Extension'.ljust(10)} -> {'Format'.ljust(10)} | Read/Write")
+for ext, fmt in sorted(Image.EXTENSION.items()):
+    readonly = ("" if Image.SAVE.get(fmt) else "| READ-ONLY")
+    writeonly = ("" if Image.OPEN.get(fmt) else "| WRITE-ONLY")
+    print(f"{ext.ljust(10)} -> {fmt.ljust(10)} {readonly}{writeonly}")
+```
+
+Not all image formats can be read *and* written. For example, the *PDF* image
+format can be written with Pillow, but cannot be read. Consequently, it can be
+used as `output-format` by *Image Process* but does not work when you attempt to
+use it as the original input format.
+
+The ability to *display* a particular image format depends on the browser.
+Modern browsers will typically support the following formats: JPEG, PNG, GIF,
+SVG, WebP, AVIF (and ICO).
+
+For displaying images on your Pelican web site consider the following output formats:
+
+| Format | Best For... | Browser Support |
+|---|---|---|
+| JPEG | Standard photo (no transparency) | 100% |
+| PNG | Graphics including transparency | 100% |
+| WebP | All-purpose images (smaller size than JPEG/PNG) | ~97% (modern) |
+| AVIF | All-purpose images (smaller size than WebP) | ~94% (latest) |
+| GIF | Simple, low-resolution animations. | 100% |
+
+For most use cases, selecting either *AVIF* or *WebP* as output format (setting
+`output-format`), with a fallback (setting `default`) of *JPEG* or *PNG* will
+give good results.
+
+The *SVG* image format is omitted on purpose from the list above; it is a
+*vector* image format (as opposed to the others, which are *raster* formats),
+that is best used for logos and illustrations. You should not blindly convert
+images (especially not photographs!) to this format unless you are sure what you
+are doing. For more information on how vector image formats compare to raster
+image formats, see this [Wikipedia
+article](https://en.wikipedia.org/wiki/Vector_graphics).
 
 ### Additional Settings
 
@@ -638,8 +736,11 @@ is a helper function to do this for you. From the Python REPL:
 ```python
 >>> from pelican.plugins.image_process.test_image_process import generate_test_images
 >>> generate_test_images()
-36 test images generated!
+60 test images generated!
 ```
+
+This generates both standard transform test images (54) and format conversion
+test images (6 for WebP and AVIF).
 
 ## License
 

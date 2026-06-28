@@ -6,7 +6,7 @@ import subprocess
 import warnings
 
 from bs4 import BeautifulSoup
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageChops, UnidentifiedImageError
 import pytest
 
 from pelican.plugins.image_process import (
@@ -45,6 +45,10 @@ EXIF_TEST_IMAGES = [
 ]
 NOEXIF_TEST_IMAGES = [
     TEST_DATA.joinpath("noexif", f"pelican-bird.{ext}").resolve()
+    for ext in SUPPORTED_EXIF_IMAGE_FORMATS
+]
+EXIF_ORIENTATION_TEST_IMAGES = [
+    TEST_DATA.joinpath("exif", f"pelican-bird-rot90.{ext}").resolve()
     for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
@@ -824,6 +828,37 @@ def test_copy_exif_tags_does_not_add_exif_dims_tags(tmp_path, image_path):
 
     assert "ExifImageWidth" not in actual_tags
     assert "ExifImageHeight" not in actual_tags
+
+
+@pytest.mark.parametrize("image_path", EXIF_ORIENTATION_TEST_IMAGES)
+@pytest.mark.parametrize("copy_tags", [True, False])
+def test_exif_orientation(tmp_path, image_path, copy_tags):
+    original_path = TEST_DATA.joinpath("pelican-bird.png")
+    original = Image.open(original_path)
+
+    settings = get_settings(IMAGE_PROCESS_COPY_EXIF_TAGS=copy_tags)
+
+    transform_params = []
+    image_name = image_path.name
+    destination_path = tmp_path / image_name
+
+    process_image(
+        (str(image_path), str(destination_path), transform_params),
+        settings,
+    )
+
+    result = Image.open(destination_path)
+
+    # The output should be the same size as the original (not the rotated
+    # source), because ImageOps.exif_transpose() should correct the
+    # orientation before saving.
+    assert result.size == original.size
+
+    # Each channel's max pixel diff must be ≤ 1 (matching the existing
+    # tolerance used in test_all_transforms).
+    diff = ImageChops.difference(result.convert("RGB"), original.convert("RGB"))
+    extrema = diff.getextrema()
+    assert all(max_val <= 1 for _, max_val in extrema)
 
 
 def test_try_open_image():

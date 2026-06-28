@@ -22,7 +22,7 @@ from urllib.parse import unquote, urljoin, urlparse
 from urllib.request import pathname2url, url2pathname
 
 from bs4 import BeautifulSoup
-from PIL import Image, ImageFilter, UnidentifiedImageError
+from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
 
 from pelican import __version__ as pelican_version, signals
 
@@ -102,6 +102,7 @@ class ExifTool:
             b"-TagsFromFile",
             src.encode(self.encoding, ExifTool.errors),
             dst.encode(self.encoding, ExifTool.errors),
+            b"-Orientation=1",
         )
         self._send_command(params)
         params = (
@@ -751,6 +752,8 @@ def process_image(image, settings):
             i = try_open_image(image[0])
         except (UnidentifiedImageError, FileNotFoundError):
             return None
+
+        i = ImageOps.exif_transpose(i)
 
         for step in image[2]:
             if callable(step):

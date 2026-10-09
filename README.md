@@ -212,6 +212,13 @@ width in pixels of the associated image and must have the suffix
 attribute of the image. This is the image that will be displayed by
 browsers that do not support the `srcset` syntax.
 
+If a derivative image ends up narrower than its width description — for
+example, because the original image is only 1024 pixels wide and upscaling is
+disabled — *Image Process* replaces the description in the generated `srcset`
+with the actual width of the image (e.g., `1024w` instead of `1600w`). Entries
+that would duplicate an already listed width are omitted, so the browser is
+never offered several copies of the same image.
+
 Both definitions above also demonstrate how
 the input image may be transcoded into another file format. This allows you to
 transcode your image from, for example, a `png` original to `webp`

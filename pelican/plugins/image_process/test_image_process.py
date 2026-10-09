@@ -12,6 +12,7 @@ import pytest
 from pelican.plugins.image_process import (
     ExifTool,
     compute_paths,
+    get_srcset_descriptor,
     get_target_filename,
     harvest_images_in_fragment,
     process_image,
@@ -638,6 +639,95 @@ COMPLEX_TRANSFORMS = {
 }
 
 
+def mock_process_image_size(image, settings):
+    """Mock process_image(), pretending derivatives have their declared width."""
+    descriptor = Path(image[1]).parent.name
+    if descriptor.endswith("w") and descriptor[:-1].isdigit():
+        return int(descriptor[:-1]), 384
+    return 512, 384
+
+
+@pytest.mark.parametrize(
+    "condition, image_size, seen_widths, expected, expected_seen",
+    [
+        # Density descriptors are left untouched.
+        ("2x", (100, 100), set(), "2x", set()),
+        # Image could not be processed: keep declared descriptor.
+        ("800w", None, set(), "800w", set()),
+        # Image is (at least) as wide as declared.
+        ("800w", (800, 600), set(), "800w", {800}),
+        ("800w", (900, 600), set(), "800w", {800}),
+        # Image is narrower than declared: use the actual width.
+        ("2000w", (1500, 1000), {1000}, "1500w", {1000, 1500}),
+        # Image is narrower than declared and that width is already used.
+        ("3000w", (1500, 1000), {1000, 1500}, None, {1000, 1500}),
+    ],
+)
+def test_get_srcset_descriptor(
+    condition, image_size, seen_widths, expected, expected_seen
+):
+    assert get_srcset_descriptor(condition, image_size, seen_widths) == expected
+    assert seen_widths == expected_seen
+
+
+def test_srcset_does_not_advertise_upscaled_widths(tmp_path):
+    """Entries wider than the source image are not advertised in srcset.
+
+    Related to issue #53 https://github.com/pelican-plugins/image-process/issues/53
+    """
+    settings = get_settings(
+        PATH=TEST_DATA,
+        OUTPUT_PATH=tmp_path,
+        IMAGE_PROCESS={
+            "large": {
+                "type": "responsive-image",
+                "srcset": [
+                    ("600w", ["scale_out 600 1 False"]),
+                    ("1000w", ["scale_out 1000 1 False"]),
+                    ("2000w", ["scale_out 2000 1 False"]),
+                    ("3000w", ["scale_out 3000 1 False"]),
+                ],
+                "default": "1000w",
+            },
+        },
+        IMAGE_PROCESS_DIR="derivs",
+    )
+
+    # pelican-bird.jpg is 1024px wide.
+    tag = '<img class="image-process-large" src="/pelican-bird.jpg"/>'
+    soup = BeautifulSoup(harvest_images_in_fragment(tag, settings), "html.parser")
+
+    assert soup.img["srcset"] == (
+        "/derivs/large/600w/pelican-bird.jpg 600w, "
+        "/derivs/large/1000w/pelican-bird.jpg 1000w, "
+        "/derivs/large/2000w/pelican-bird.jpg 1024w"
+    )
+
+
+def test_picture_srcset_does_not_advertise_upscaled_widths(mocker):
+    """Entries wider than the source image are not advertised in <source>."""
+    process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
+    # The source image is 1024px wide; scaled derivatives cannot be wider.
+    process.side_effect = lambda image, settings: (
+        min(mock_process_image_size(image, settings)[0], 1024),
+        768,
+    )
+
+    settings = get_settings(
+        IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"
+    )
+    tag = (
+        '<picture><source class="source-1" src="/images/pelican-closeup.jpg"/>'
+        '<img class="image-process-pict" src="/images/pelican.jpg"/></picture>'
+    )
+    soup = BeautifulSoup(harvest_images_in_fragment(tag, settings), "html.parser")
+
+    assert soup.find("source")["srcset"] == (
+        "/images/derivs/pict/default/640w/pelican.jpg 640w, "
+        "/images/derivs/pict/default/1024w/pelican.jpg 1024w"
+    )
+
+
 @pytest.mark.parametrize(
     "orig_tag, new_tag, call_args",
     [
@@ -849,7 +939,7 @@ COMPLEX_TRANSFORMS = {
 def test_html_and_pictures_generation(mocker, orig_tag, new_tag, call_args):
     """Tests that the generated html is as expected and the images are processed."""
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
-    process.return_value = (512, 384)
+    process.side_effect = mock_process_image_size
 
     settings = get_settings(
         IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"
@@ -997,7 +1087,7 @@ def test_special_chars_in_image_path_are_handled_properly(mocker, orig_tag, new_
     Related to issue #78 https://github.com/pelican-plugins/image-process/issues/78
     """
     process = mocker.patch("pelican.plugins.image_process.image_process.process_image")
-    process.return_value = (512, 384)
+    process.side_effect = mock_process_image_size
 
     settings = get_settings(
         IMAGE_PROCESS=COMPLEX_TRANSFORMS, IMAGE_PROCESS_DIR="derivs"

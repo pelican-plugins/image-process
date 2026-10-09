@@ -531,6 +531,35 @@ def format_srcset_element(path, condition):
     return f"{path} {condition}"
 
 
+def get_srcset_descriptor(condition, image_size, seen_widths):
+    """Return the srcset descriptor matching the size of the processed image.
+
+    A width descriptor (e.g. "3000w") is only accurate if the processed image
+    is actually that wide. When the source image is too small (and upscaling
+    is disabled), the derivative ends up narrower than declared. In that case
+    the descriptor is replaced by the real width of the image, and the entry
+    is dropped (None is returned) if another entry already has that width.
+
+    seen_widths is a set of widths already used in the srcset; it is updated
+    in place.
+    """
+    match = re.fullmatch(r"(\d+)w", condition.strip())
+    if match is None or image_size is None:
+        return condition
+
+    declared_width = int(match[1])
+    width = image_size[0]
+    if width >= declared_width:
+        seen_widths.add(declared_width)
+        return condition
+
+    if width in seen_widths:
+        return None
+
+    seen_widths.add(width)
+    return f"{width}w"
+
+
 def build_srcset(img, settings, derivative):
     path = compute_paths(img["src"], settings, derivative)
     process = settings["IMAGE_PROCESS"][derivative]
@@ -572,13 +601,16 @@ def build_srcset(img, settings, derivative):
         img["sizes"] = process["sizes"]
 
     srcset = []
+    seen_widths = set()
     for src in process["srcset"]:
         entry_format = get_target_format(src, top_default_format)
         filename = get_target_filename(path.filename, entry_format)
         file_path = posixpath.join(path.base_url, src[0], filename)
-        srcset.append(format_srcset_element(file_path, src[0]))
         destination = os.path.join(str(path.base_path), src[0], filename)
-        process_image((path.source, destination, src[1]), settings)
+        image_size = process_image((path.source, destination, src[1]), settings)
+        descriptor = get_srcset_descriptor(src[0], image_size, seen_widths)
+        if descriptor is not None:
+            srcset.append(format_srcset_element(file_path, descriptor))
 
     if len(srcset) > 0:
         img["srcset"] = ", ".join(srcset)
@@ -620,15 +652,18 @@ def construct_picture_tag(soup, img, sources, settings):
         top_source_format = get_target_format(s)
 
         srcset = []
+        seen_widths = set()
         for src in s["srcset"]:
             entry_format = get_target_format(src, top_source_format)
             filename = get_target_filename(s["filename"], entry_format)
             url = os.path.join(s["base_url"], s["name"], src[0], filename)
-            srcset.append(format_srcset_element(str(url), src[0]))
 
             source = os.path.join(settings["PATH"], s["url"][1:])
             destination = os.path.join(s["base_path"], s["name"], src[0], filename)
-            process_image((source, destination, src[1]), settings)
+            image_size = process_image((source, destination, src[1]), settings)
+            descriptor = get_srcset_descriptor(src[0], image_size, seen_widths)
+            if descriptor is not None:
+                srcset.append(format_srcset_element(str(url), descriptor))
 
         if len(srcset) > 0:
             source_tag["srcset"] = ", ".join(srcset)
@@ -722,15 +757,18 @@ def generate_srcset_and_insert_source(img, s, settings):
     top_source_format = get_target_format(s)
 
     srcset = []
+    seen_widths = set()
     for src in s["srcset"]:
         entry_format = get_target_format(src, top_source_format)
         filename = get_target_filename(s["filename"], entry_format)
         url = posixpath.join(s["base_url"], s["name"], src[0], filename)
-        srcset.append(format_srcset_element(str(url), src[0]))
 
         source = os.path.join(settings["PATH"], s["url"][1:])
         destination = os.path.join(s["base_path"], s["name"], src[0], filename)
-        process_image((source, destination, src[1]), settings)
+        image_size = process_image((source, destination, src[1]), settings)
+        descriptor = get_srcset_descriptor(src[0], image_size, seen_widths)
+        if descriptor is not None:
+            srcset.append(format_srcset_element(str(url), descriptor))
 
     if len(srcset) > 0:
         # Append source elements to the picture in the same order

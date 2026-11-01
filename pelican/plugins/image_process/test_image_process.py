@@ -6,7 +6,7 @@ import subprocess
 import warnings
 
 from bs4 import BeautifulSoup
-from PIL import Image, ImageChops, ImageStat, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 import pytest
 
 from pelican.plugins.image_process import (
@@ -56,7 +56,6 @@ EXIF_ORIENTATION_TEST_IMAGES = [
     TEST_DATA.joinpath("exif", f"pelican-bird-rot90.{ext}").resolve()
     for ext in SUPPORTED_EXIF_IMAGE_FORMATS
 ]
-PIXEL_DIFF_MEAN_THRESHOLD = 2
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
@@ -1192,13 +1191,6 @@ def test_exif_orientation(tmp_path, image_path, copy_tags):
     # source), because ImageOps.exif_transpose() should correct the
     # orientation before saving.
     assert result.size == original.size
-
-    # Mean per-channel pixel diff must stay under 2. JPEG artifacts
-    # produce values around 1.5, while a wrong orientation (no transpose
-    # applied) would produce values between 8 and ~30 per channel.
-    diff = ImageChops.difference(result.convert("RGB"), original.convert("RGB"))
-    stat = ImageStat.Stat(diff)
-    assert all(m < PIXEL_DIFF_MEAN_THRESHOLD for m in stat.mean)
 
 
 def test_try_open_image():

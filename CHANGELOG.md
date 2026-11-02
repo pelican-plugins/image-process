@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+3.4.1 - 2026-11-02
+------------------
+
+Auto-rotate images based on EXIF Orientation tag before applying user transforms, and clear the orientation tag in the output to prevent double-rotation in EXIF-aware viewers.
+
+Contributed by [mluisser](https://github.com/cargocultprogramming) via [PR #104](https://github.com/pelican-plugins/image-process/pull/104/)
+
+
 3.4.0 - 2026-06-12
 ------------------
 

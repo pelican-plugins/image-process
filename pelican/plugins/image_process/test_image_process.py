@@ -52,6 +52,10 @@ FORMAT_TEST_IMAGES_JPG = [
     TEST_DATA.joinpath(f"{file}.jpg").resolve()
     for file in ["pelican-bird", "black-borders"]
 ]
+EXIF_ORIENTATION_TEST_IMAGES = [
+    TEST_DATA.joinpath("exif", f"pelican-bird-rot90.{ext}").resolve()
+    for ext in SUPPORTED_EXIF_IMAGE_FORMATS
+]
 TRANSFORM_RESULTS = TEST_DATA.joinpath("results").resolve()
 
 # Register all supported transforms.
@@ -1162,6 +1166,31 @@ def test_copy_exif_tags_does_not_add_exif_dims_tags(tmp_path, image_path):
 
     assert "ExifImageWidth" not in actual_tags
     assert "ExifImageHeight" not in actual_tags
+
+
+@pytest.mark.parametrize("image_path", EXIF_ORIENTATION_TEST_IMAGES)
+@pytest.mark.parametrize("copy_tags", [True, False])
+def test_exif_orientation(tmp_path, image_path, copy_tags):
+    original_path = TEST_DATA.joinpath("pelican-bird.png")
+    original = Image.open(original_path)
+
+    settings = get_settings(IMAGE_PROCESS_COPY_EXIF_TAGS=copy_tags)
+
+    transform_params = []
+    image_name = image_path.name
+    destination_path = tmp_path / image_name
+
+    process_image(
+        (str(image_path), str(destination_path), transform_params),
+        settings,
+    )
+
+    result = Image.open(destination_path)
+
+    # The output should be the same size as the original (not the rotated
+    # source), because ImageOps.exif_transpose() should correct the
+    # orientation before saving.
+    assert result.size == original.size
 
 
 def test_try_open_image():
